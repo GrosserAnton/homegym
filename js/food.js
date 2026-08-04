@@ -55,17 +55,68 @@ function normalize(p) {
       micros: readMicros(n),
     },
     serving_g: num(p.serving_quantity) || null,
+    piece_g: null,
   };
 }
 
+// A small set of curated everyday foods (values per 100 g) so staples like eggs
+// always carry correct macros — and a sensible piece weight for counting by piece.
+// per = [kcal, protein, carbs, fat]. piece_g = grams of one typical piece.
+export const COMMON_FOODS = [
+  { name: "Ei (M)",              kw: ["ei", "eier", "egg", "hühnerei"],                    per: [143, 12.6, 1.1, 9.9], piece_g: 70 },
+  { name: "Apfel",               kw: ["apfel", "äpfel", "apple"],                          per: [52, 0.3, 14, 0.2],    piece_g: 150 },
+  { name: "Banane",              kw: ["banane", "bananen", "banana"],                      per: [89, 1.1, 23, 0.3],    piece_g: 120 },
+  { name: "Kartoffel (gekocht)", kw: ["kartoffel", "kartoffeln", "potato"],                per: [87, 2, 20, 0.1],      piece_g: 120 },
+  { name: "Vollkornbrot",        kw: ["vollkornbrot", "brot", "bread"],                    per: [237, 8, 41, 3.3],     piece_g: 45 },
+  { name: "Toastbrot",           kw: ["toast", "toastbrot"],                               per: [270, 9, 49, 3.5],     piece_g: 25 },
+  { name: "Reiswaffel",          kw: ["reiswaffel", "reiswaffeln"],                        per: [387, 8, 82, 3],       piece_g: 9 },
+  { name: "Gouda",               kw: ["gouda", "käse", "cheese"],                          per: [356, 25, 2.2, 27],    piece_g: 25 },
+  { name: "Haferflocken",        kw: ["haferflocken", "hafer", "oats", "oatmeal"],         per: [370, 13, 59, 7] },
+  { name: "Reis (gekocht)",      kw: ["reis", "rice"],                                     per: [130, 2.7, 28, 0.3] },
+  { name: "Nudeln (gekocht)",    kw: ["nudeln", "pasta", "spaghetti"],                     per: [158, 5.8, 31, 0.9] },
+  { name: "Milch 3,5%",          kw: ["milch", "milk", "vollmilch"],                       per: [64, 3.4, 4.8, 3.6] },
+  { name: "Magerquark",          kw: ["magerquark", "quark"],                              per: [67, 12, 4, 0.3] },
+  { name: "Naturjoghurt 3,5%",   kw: ["joghurt", "naturjoghurt", "yogurt", "jogurt"],      per: [61, 3.5, 4.7, 3.3] },
+  { name: "Hähnchenbrust",       kw: ["hähnchen", "hühnchen", "chicken", "hähnchenbrust"], per: [165, 31, 0, 3.6] },
+  { name: "Thunfisch (Dose)",    kw: ["thunfisch", "tuna"],                                per: [116, 26, 0, 1] },
+  { name: "Mandeln",             kw: ["mandeln", "mandel", "almonds"],                     per: [579, 21, 22, 49] },
+  { name: "Olivenöl",            kw: ["olivenöl", "olive oil"],                            per: [884, 0, 0, 100] },
+  { name: "Butter",              kw: ["butter"],                                           per: [717, 0.7, 0.7, 81] },
+];
+
+function commonToFood(c) {
+  return {
+    code: null, name: c.name, brand: "Basics",
+    per100: { kcal: c.per[0], protein: c.per[1], carbs: c.per[2], fat: c.per[3], micros: {} },
+    serving_g: c.piece_g || null,
+    piece_g: c.piece_g || null,
+    common: true,
+  };
+}
+export function searchCommon(query) {
+  const q = (query || "").trim().toLowerCase();
+  if (q.length < 2) return [];
+  return COMMON_FOODS
+    .filter((c) => c.name.toLowerCase().includes(q) || c.kw.some((k) => k.includes(q) || q.includes(k)))
+    .map(commonToFood);
+}
+const macroScore = (f) => ((f.per100.protein + f.per100.carbs + f.per100.fat) > 0 ? 1 : 0);
+
 export async function searchFoods(query) {
   const q = (query || "").trim();
-  if (q.length < 2) return [];
+  const common = searchCommon(q); // curated staples first
+  if (q.length < 2) return common;
   const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=25&fields=${FIELDS}&lc=de`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("Food search failed");
-  const data = await res.json();
-  return (data.products || []).map(normalize).filter((f) => f && f.per100.kcal > 0);
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return common;
+    const data = await res.json();
+    const off = (data.products || []).map(normalize).filter((f) => f && f.per100.kcal > 0);
+    off.sort((a, b) => macroScore(b) - macroScore(a)); // products with full macros first
+    return [...common, ...off];
+  } catch (e) {
+    return common; // Open Food Facts unavailable → still offer the basics
+  }
 }
 
 export async function lookupBarcode(code) {

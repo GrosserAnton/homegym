@@ -46,7 +46,7 @@ nav.tabbar a{
   color:var(--muted-2);text-decoration:none;font-size:11px;font-weight:600;padding-top:8px;
 }
 nav.tabbar a .ic{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2}
-nav.tabbar a.active{color:var(--accent-text)}
+nav.tabbar a.active{color:var(--gold)}
 
 /* Cards */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:14px}
@@ -59,7 +59,7 @@ nav.tabbar a.active{color:var(--accent-text)}
 .small{font-size:13px}
 .tiny{font-size:11px}
 .center{text-align:center}
-h2.section{font-family:var(--font-display);font-size:15px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin:22px 2px 10px}
+h2.section{font-family:var(--font-display);font-size:15px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--gold);margin:22px 2px 10px}
 
 /* Buttons */
 .btn{
@@ -200,7 +200,7 @@ details summary::-webkit-details-marker{display:none}
 .dashhead h1{font-family:var(--font-display);font-size:30px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;margin:0}
 .dashhead-actions{display:flex;align-items:center;gap:10px}
 .streak{display:inline-flex;align-items:center;gap:5px;font-size:15px;color:var(--text)}
-.streak b{font-family:var(--font-display);font-weight:700}
+.streak b{font-family:var(--font-display);font-weight:700;color:var(--gold)}
 .dashhead .btn.icon{width:40px;height:40px;color:var(--muted)}
 
 /* Workout carousel */
@@ -217,8 +217,8 @@ details summary::-webkit-details-marker{display:none}
 .wtitle{font-family:var(--font-display);font-size:30px;font-weight:600;line-height:1.05;letter-spacing:.3px}
 .wmeta{color:var(--muted);font-size:14px;margin-top:6px}
 .btn.wstart{
-  width:auto;align-self:flex-start;margin-top:auto;background:transparent;color:var(--accent-text);
-  border:1.5px solid var(--accent);padding:9px 26px;border-radius:11px;
+  width:auto;align-self:flex-start;margin-top:auto;background:transparent;color:var(--gold);
+  border:1.5px solid var(--gold);padding:9px 26px;border-radius:11px;
   font-family:var(--font-display);font-size:15px;letter-spacing:1.5px;
 }
 .wslide-body{display:flex;gap:4px;align-items:center;flex:0 0 auto}
@@ -239,7 +239,7 @@ details summary::-webkit-details-marker{display:none}
 .hcard .htitle{font-family:var(--font-display);font-size:20px;font-weight:600;line-height:1}
 .hcard .hsub{color:var(--muted);font-size:12px;margin-top:2px}
 .hcard .harrow{color:var(--muted-2);font-size:22px;line-height:1;font-weight:700}
-.hcard .hnum{font-family:var(--font-display);font-weight:700;font-size:19px;white-space:nowrap}
+.hcard .hnum{font-family:var(--font-display);font-weight:700;font-size:19px;white-space:nowrap;color:var(--gold)}
 .hcard .hnum small{font-size:11px;color:var(--muted);margin-left:2px;font-weight:600}
 
 /* Steps placeholder */

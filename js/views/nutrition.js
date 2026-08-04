@@ -297,19 +297,23 @@ function quickRow(r, i) {
 }
 
 function openPortion(food, meal, onDone) {
-  const def = food.serving_g && food.serving_g > 0 ? food.serving_g : 100;
+  const pieceG = food.piece_g && food.piece_g > 0 ? food.piece_g : 0;
+  const def = pieceG || (food.serving_g && food.serving_g > 0 ? food.serving_g : 100);
   const wrap = openModal(`<div class="grabber"></div>
     <h2 style="margin:0 0 4px">${esc(food.name)}</h2>
     <div class="muted small" style="margin-bottom:12px">${food.brand ? esc(food.brand) + " · " : ""}${Math.round(food.per100.kcal)} kcal / 100 g</div>
     <div class="row" style="gap:10px">
+      ${pieceG ? `<label class="field grow"><span class="lab">Pieces (×${pieceG} g)</span><input id="pieces" inputmode="decimal" value="1" /></label>` : ""}
       <label class="field grow"><span class="lab">Amount (g)</span><input id="amt" inputmode="decimal" value="${def}" /></label>
-      <label class="field grow"><span class="lab">Meal</span><select id="meal">${MEALS.map((m) => `<option value="${m.id}" ${m.id === meal ? "selected" : ""}>${m.label}</option>`).join("")}</select></label>
     </div>
+    <label class="field"><span class="lab">Meal</span><select id="meal">${MEALS.map((m) => `<option value="${m.id}" ${m.id === meal ? "selected" : ""}>${m.label}</option>`).join("")}</select></label>
     <div class="card" id="prev"></div>
     <button class="btn primary" id="addb" style="margin-top:8px">Add</button>
     <button class="btn ghost" data-close style="margin-top:10px">Cancel</button>`);
   const box = wrap.querySelector(".modal");
   const amt = box.querySelector("#amt");
+  const pieces = box.querySelector("#pieces");
+  const round1 = (n) => Math.round(n * 10) / 10;
   const upd = () => {
     const s = scale(food.per100, Number(amt.value) || 0);
     box.querySelector("#prev").innerHTML = `<div class="macro-row">
@@ -318,7 +322,9 @@ function openPortion(food, meal, onDone) {
       <div class="macro"><div class="mv">${s.carbs}g</div><div class="ml">Carbs</div></div>
       <div class="macro"><div class="mv">${s.fat}g</div><div class="ml">Fat</div></div></div>`;
   };
-  amt.addEventListener("input", upd); upd();
+  amt.addEventListener("input", () => { if (pieces && pieceG) pieces.value = round1((Number(amt.value) || 0) / pieceG); upd(); });
+  if (pieces) pieces.addEventListener("input", () => { amt.value = Math.round((Number(pieces.value) || 0) * pieceG); upd(); });
+  upd();
   box.querySelector("#addb").onclick = async () => {
     const g = Number(amt.value) || 0;
     if (g <= 0) { toast("Enter an amount", "error"); return; }

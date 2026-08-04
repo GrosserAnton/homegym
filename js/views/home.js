@@ -189,7 +189,7 @@ function caloriesCard(kcal, goal) {
     <div class="ring-wrap">
       <svg viewBox="0 0 100 100">
         <circle cx="50" cy="50" r="${RING_R}" fill="none" stroke="var(--surface-2)" stroke-width="9"/>
-        <circle cx="50" cy="50" r="${RING_R}" fill="none" stroke="var(--accent)" stroke-width="9"
+        <circle cx="50" cy="50" r="${RING_R}" fill="none" stroke="var(--gold)" stroke-width="9"
           stroke-linecap="round" stroke-dasharray="${RING_C.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"/>
       </svg>
       <div class="ring-center">
