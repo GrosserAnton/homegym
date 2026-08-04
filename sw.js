@@ -1,6 +1,6 @@
 // Basic offline cache for the app shell + exercise data.
 // Cross-origin requests (Supabase API, esm.sh modules, exercise images) always go to the network.
-const CACHE = "homegym-v2";
+const CACHE = "homegym-v3";
 const ASSETS = [
   "./", "./index.html", "./styles.css", "./manifest.webmanifest",
   "./data/exercises.json",

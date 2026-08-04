@@ -36,10 +36,19 @@ export async function signUp(email, password, username) {
   if (error) throw error;
   return data; // caller inspects data.session (null => needs email confirmation)
 }
-export async function signIn(email, password) {
-  const { data, error } = await supa.auth.signInWithPassword({ email, password });
+// Login by username: resolve username -> account email server-side, then sign in.
+export async function signInWithUsername(username, password) {
+  const uname = (username || "").trim();
+  const { data: email, error: rpcErr } = await supa.rpc("gym_email_for_username", { uname });
+  if (rpcErr) throw rpcErr;
+  if (!email) throw new Error("Username not found. Have you registered yet?");
+  const { error } = await supa.auth.signInWithPassword({ email, password });
+  if (error) throw new Error("Wrong username or password.");
+}
+export async function usernameAvailable(username) {
+  const { data, error } = await supa.rpc("gym_username_available", { uname: (username || "").trim() });
   if (error) throw error;
-  return data;
+  return data === true;
 }
 export async function signOut() {
   await supa.auth.signOut();
