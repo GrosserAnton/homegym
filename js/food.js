@@ -100,18 +100,19 @@ function commonToFood(c) {
 function normStr(s) {
   return (s || "").toLowerCase()
     .replace(/ä/g, "a").replace(/ö/g, "o").replace(/ü/g, "u").replace(/ß/g, "ss")
+    .replace(/ae/g, "a").replace(/oe/g, "o").replace(/ue/g, "u") // "groesse" == "größe"
     .replace(/[^a-z0-9 ]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
 export function searchCommon(query) {
-  const nq = normStr(query);
-  if (nq.length < 2) return [];
-  const tokens = nq.split(" ").filter(Boolean);
+  const tokens = normStr(query).split(" ").filter(Boolean);
+  if (!tokens.length || normStr(query).length < 2) return [];
   return COMMON_FOODS
     .filter((c) => {
-      const hay = normStr(c.name + " " + c.kw.join(" "));
-      return tokens.every((t) => hay.includes(t)); // all words must match, any order
+      const words = normStr(c.name + " " + c.kw.join(" ")).split(" ").filter(Boolean);
+      // every typed word must match a whole word or the start of one (any order)
+      return tokens.every((t) => words.some((w) => w === t || w.startsWith(t)));
     })
     .map(commonToFood);
 }
