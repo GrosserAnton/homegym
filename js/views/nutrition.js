@@ -122,7 +122,7 @@ function mealsHtml(entries) {
   return MEALS.map((m) => {
     const items = entries.filter((e) => (e.meal || "breakfast") === m.id);
     const kcal = Math.round(items.reduce((a, e) => a + +e.kcal, 0));
-    return `<div class="card">
+    return `<div class="card tap" data-mealcard="${m.id}">
       <div class="row between" style="margin-bottom:${items.length ? "10px" : "0"}">
         <div class="row" style="gap:8px"><span>${m.icon}</span><b>${m.label}</b>${kcal ? `<span class="muted small">${kcal} kcal</span>` : ""}</div>
         <div class="row" style="gap:6px">
@@ -158,7 +158,14 @@ function microsHtml(entries) {
 }
 
 function wireBody(body, entries, draw) {
-  body.querySelectorAll("[data-addmeal]").forEach((b) => { b.onclick = () => openAdd(b.dataset.addmeal, draw); });
+  // The whole meal card opens the add-food dialog (not just the + button) —
+  // except when tapping the per-item delete (✕) or the meal actions (⋯) button.
+  body.querySelectorAll("[data-mealcard]").forEach((c) => {
+    c.onclick = (e) => {
+      if (e.target.closest("[data-del], [data-mealmenu]")) return;
+      openAdd(c.dataset.mealcard, draw);
+    };
+  });
   body.querySelectorAll("[data-del]").forEach((b) => {
     b.onclick = async () => {
       if (b.dataset.rec) { try { await skipRecurringForDate(b.dataset.rec, ds(current)); } catch (e) {} }
