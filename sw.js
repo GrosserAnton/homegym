@@ -3,7 +3,7 @@
 // immediately; cache is only the offline fallback. The big, rarely-changing
 // exercise DB stays cache-first for speed. Cross-origin requests (Supabase API,
 // esm.sh modules, exercise images) always go straight to the network.
-const CACHE = "maxbody-v8";
+const CACHE = "maxbody-v9";
 const ASSETS = [
   "./", "./index.html", "./styles.css", "./manifest.webmanifest",
   "./data/exercises.json",
@@ -26,12 +26,10 @@ self.addEventListener("activate", (e) => {
   );
 });
 
-function fetchAndCache(request) {
-  return fetch(request).then((res) => {
-    const copy = res.clone();
-    caches.open(CACHE).then((c) => c.put(request, copy));
-    return res;
-  });
+function putInCache(request, res) {
+  const copy = res.clone();
+  caches.open(CACHE).then((c) => c.put(request, copy));
+  return res;
 }
 
 self.addEventListener("fetch", (e) => {
@@ -40,15 +38,16 @@ self.addEventListener("fetch", (e) => {
 
   // Big, rarely-changing exercise DB: cache-first for speed.
   if (url.pathname.endsWith("/data/exercises.json")) {
-    e.respondWith(caches.match(e.request).then((hit) => hit || fetchAndCache(e.request)));
+    e.respondWith(caches.match(e.request).then((hit) => hit || fetch(e.request).then((res) => putInCache(e.request, res))));
     return;
   }
 
-  // App shell: network-first so updates are picked up immediately; fall back to
-  // the cache (and finally the cached index.html) only when offline.
+  // App shell: network-first with forced revalidation ("no-cache"), so a stale
+  // long-lived HTTP-cache entry can never mask a fresh deploy. Cache is only the
+  // offline fallback.
   e.respondWith(
-    fetchAndCache(e.request).catch(() =>
-      caches.match(e.request).then((hit) => hit || caches.match("./index.html"))
-    )
+    fetch(e.request.url, { cache: "no-cache" })
+      .then((res) => putInCache(e.request, res))
+      .catch(() => caches.match(e.request).then((hit) => hit || caches.match("./index.html")))
   );
 });
