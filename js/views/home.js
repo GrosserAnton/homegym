@@ -91,13 +91,21 @@ function workoutCarousel(plan) {
     </div>`;
   }
   const days = plan.days;
-  const order = orderedDayIndexes(plan);
-  const slides = order.map((i) => workoutSlide(plan, i)).join("");
-  const dots =
-    days.length > 1
-      ? `<div class="wdots">${order.map((_, i) => `<span class="wdot ${i === 0 ? "on" : ""}"></span>`).join("")}</div>`
-      : "";
-  return `<div class="wcarousel"><div class="wtrack" id="wtrack">${slides}</div>${dots}</div>`;
+  const scheduled = days.some((d) => Number.isInteger(d.weekday));
+  // Only today's workout: the day pinned to today's weekday. If days are pinned
+  // but none is today, it's a rest day. If nothing is pinned yet, fall back to
+  // the rotation's next day so there's still something to start.
+  const dayIndex = scheduled ? days.findIndex((d) => d.weekday === todayWd()) : orderedDayIndexes(plan)[0];
+  if (dayIndex < 0) {
+    return `<div class="wslide wempty">
+      <div class="wslide-info">
+        <div class="wday-label">Today</div>
+        <div class="wtitle">Rest day</div>
+        <div class="wmeta">Nothing scheduled — recover and refuel 💪</div>
+      </div>
+    </div>`;
+  }
+  return `<div class="wcarousel">${workoutSlide(plan, dayIndex)}</div>`;
 }
 
 function workoutSlide(plan, dayIndex) {
