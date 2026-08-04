@@ -1,0 +1,28 @@
+# Maxbody — static PWA on Hostinger.
+
+# --- Caching -----------------------------------------------------------------
+# The app shell (HTML/JS/CSS/manifest) must always revalidate, so a deploy shows
+# up immediately instead of being served stale from the browser's HTTP cache.
+<IfModule mod_headers.c>
+  <FilesMatch "\.(html|js|css|webmanifest)$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+  # The service worker itself must never be cached.
+  <FilesMatch "(^|/)sw\.js$">
+    Header set Cache-Control "no-store, no-cache, must-revalidate"
+  </FilesMatch>
+  # Big, rarely-changing assets can be cached hard.
+  <FilesMatch "\.(png|jpg|jpeg|gif|svg|ico|json)$">
+    Header set Cache-Control "public, max-age=2592000"
+  </FilesMatch>
+</IfModule>
+
+# --- Security ----------------------------------------------------------------
+# Never serve dotfiles/dot-dirs (.git, .htaccess, .gitignore) or repo docs.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule (^|/)\. - [F]
+</IfModule>
+<FilesMatch "\.md$">
+  Require all denied
+</FilesMatch>
