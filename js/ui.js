@@ -34,7 +34,37 @@ export function openModal(html) {
   });
   document.body.appendChild(wrap);
   document.body.classList.add("no-scroll");
+  attachSwipeToClose(wrap.querySelector(".modal"));
   return wrap;
+}
+
+// Drag the bottom sheet down to dismiss it (in addition to Cancel / backdrop tap).
+function attachSwipeToClose(sheet) {
+  if (!sheet) return;
+  let startY = 0, dy = 0, dragging = false;
+  const start = (e) => {
+    if (sheet.scrollTop > 0) return; // let inner content scroll first
+    if (e.target.closest("input, select, textarea, button, a, [contenteditable]")) return;
+    dragging = true; dy = 0;
+    startY = e.touches[0].clientY;
+    sheet.style.transition = "none";
+  };
+  const move = (e) => {
+    if (!dragging) return;
+    dy = e.touches[0].clientY - startY;
+    if (dy > 0) sheet.style.transform = `translateY(${dy}px)`;
+  };
+  const end = () => {
+    if (!dragging) return;
+    dragging = false;
+    sheet.style.transition = "transform .22s ease";
+    if (dy > 110) closeModal();
+    else sheet.style.transform = "translateY(0)";
+  };
+  sheet.addEventListener("touchstart", start, { passive: true });
+  sheet.addEventListener("touchmove", move, { passive: true });
+  sheet.addEventListener("touchend", end);
+  sheet.addEventListener("touchcancel", end);
 }
 
 export function closeModal() {

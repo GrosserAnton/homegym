@@ -63,7 +63,9 @@ function normalize(p) {
 // always carry correct macros — and a sensible piece weight for counting by piece.
 // per = [kcal, protein, carbs, fat]. piece_g = grams of one typical piece.
 export const COMMON_FOODS = [
-  { name: "Ei (M)",              kw: ["ei", "eier", "egg", "hühnerei"],                    per: [143, 12.6, 1.1, 9.9], piece_g: 70 },
+  { name: "Ei (S)",              kw: ["ei", "eier", "egg", "hühnerei", "größe", "klein"],  per: [143, 12.6, 1.1, 9.9], piece_g: 55 },
+  { name: "Ei (M)",              kw: ["ei", "eier", "egg", "hühnerei", "größe"],           per: [143, 12.6, 1.1, 9.9], piece_g: 70 },
+  { name: "Ei (L)",              kw: ["ei", "eier", "egg", "hühnerei", "größe", "groß"],   per: [143, 12.6, 1.1, 9.9], piece_g: 80 },
   { name: "Apfel",               kw: ["apfel", "äpfel", "apple"],                          per: [52, 0.3, 14, 0.2],    piece_g: 150 },
   { name: "Banane",              kw: ["banane", "bananen", "banana"],                      per: [89, 1.1, 23, 0.3],    piece_g: 120 },
   { name: "Kartoffel (gekocht)", kw: ["kartoffel", "kartoffeln", "potato"],                per: [87, 2, 20, 0.1],      piece_g: 120 },
@@ -93,16 +95,29 @@ function commonToFood(c) {
     common: true,
   };
 }
+// Forgiving search text: lowercase, umlauts→base letters, drop punctuation,
+// collapse spaces. So "Größe M", "groesse m" and "  grosse   m " all match.
+function normStr(s) {
+  return (s || "").toLowerCase()
+    .replace(/ä/g, "a").replace(/ö/g, "o").replace(/ü/g, "u").replace(/ß/g, "ss")
+    .replace(/[^a-z0-9 ]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 export function searchCommon(query) {
-  const q = (query || "").trim().toLowerCase();
-  if (q.length < 2) return [];
+  const nq = normStr(query);
+  if (nq.length < 2) return [];
+  const tokens = nq.split(" ").filter(Boolean);
   return COMMON_FOODS
-    .filter((c) => c.name.toLowerCase().includes(q) || c.kw.some((k) => k.includes(q) || q.includes(k)))
+    .filter((c) => {
+      const hay = normStr(c.name + " " + c.kw.join(" "));
+      return tokens.every((t) => hay.includes(t)); // all words must match, any order
+    })
     .map(commonToFood);
 }
 
 export async function searchFoods(query) {
-  const q = (query || "").trim();
+  const q = (query || "").trim().replace(/\s+/g, " "); // tidy up stray spaces
   const common = searchCommon(q); // curated staples first
   if (q.length < 2) return common;
   const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=25&fields=${FIELDS}&lc=de`;
