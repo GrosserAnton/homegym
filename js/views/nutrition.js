@@ -19,6 +19,7 @@ let current = new Date();
 const expanded = new Set(); // meal ids the user expanded; meals start collapsed (summary only)
 
 const ds = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const r1 = (n) => Math.round(n * 10) / 10;
 const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
 const same = (a, b) => ds(a) === ds(b);
 function human(d) {
@@ -287,7 +288,7 @@ async function openAdd(meal, onDone) {
 function foodRow(f, i) {
   return `<div class="food-row" data-food="${i}" style="cursor:pointer">
     <div class="grow"><div class="name">${esc(f.name)}</div>
-      <div class="tags">${Math.round(f.per100.kcal)} kcal/100g · P${f.per100.protein} C${f.per100.carbs} F${f.per100.fat}${f.brand ? " · " + esc(f.brand) : ""}</div></div></div>`;
+      <div class="tags">${Math.round(f.per100.kcal)} kcal/100g · P${r1(f.per100.protein)} C${r1(f.per100.carbs)} F${r1(f.per100.fat)}${f.brand ? " · " + esc(f.brand) : ""}</div></div></div>`;
 }
 function quickRow(r, i) {
   return `<div class="food-row" data-q="${i}" style="cursor:pointer">

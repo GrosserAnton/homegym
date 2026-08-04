@@ -100,7 +100,6 @@ export function searchCommon(query) {
     .filter((c) => c.name.toLowerCase().includes(q) || c.kw.some((k) => k.includes(q) || q.includes(k)))
     .map(commonToFood);
 }
-const macroScore = (f) => ((f.per100.protein + f.per100.carbs + f.per100.fat) > 0 ? 1 : 0);
 
 export async function searchFoods(query) {
   const q = (query || "").trim();
@@ -111,8 +110,12 @@ export async function searchFoods(query) {
     const res = await fetch(url);
     if (!res.ok) return common;
     const data = await res.json();
-    const off = (data.products || []).map(normalize).filter((f) => f && f.per100.kcal > 0);
-    off.sort((a, b) => macroScore(b) - macroScore(a)); // products with full macros first
+    // Keep only products that actually list macros — many OFF entries have just
+    // energy (that's the "eggs with 0 g protein" bug). If there are kcal but no
+    // macros at all, the entry is incomplete, so drop it.
+    const off = (data.products || [])
+      .map(normalize)
+      .filter((f) => f && f.per100.kcal > 0 && f.per100.protein + f.per100.carbs + f.per100.fat > 0);
     return [...common, ...off];
   } catch (e) {
     return common; // Open Food Facts unavailable → still offer the basics

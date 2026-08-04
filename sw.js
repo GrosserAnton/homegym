@@ -3,7 +3,7 @@
 // immediately; cache is only the offline fallback. The big, rarely-changing
 // exercise DB stays cache-first for speed. Cross-origin requests (Supabase API,
 // esm.sh modules, exercise images) always go straight to the network.
-const CACHE = "maxbody-v11";
+const CACHE = "maxbody-v12";
 const ASSETS = [
   "./", "./index.html", "./styles.css", "./manifest.webmanifest",
   "./data/exercises.json",
