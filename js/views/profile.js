@@ -24,7 +24,7 @@ export async function render(el, ctx) {
       <label class="field grow"><span class="lab">Sex</span><select id="sex"><option value="male" ${p.sex === "male" ? "selected" : ""}>Male</option><option value="female" ${p.sex === "female" ? "selected" : ""}>Female</option></select></label>
     </div>
     <label class="field"><span class="lab">Activity level</span><select id="activity">${opt(ACTIVITY, p.activity || "moderate")}</select></label>
-    <label class="field"><span class="lab">Goal</span><select id="weight_goal">${opt(WEIGHT_GOALS, p.weight_goal || "gain")}</select></label>
+    <label class="field"><span class="lab">Goal</span><select id="weight_goal">${opt(WEIGHT_GOALS, p.weight_goal || "recompose")}</select></label>
     <button class="btn" id="calc">📊 Calculate my needs</button>
     <div id="calcout" class="tiny muted center" style="margin:8px 2px 0"></div>
 
@@ -37,6 +37,7 @@ export async function render(el, ctx) {
       <label class="field grow"><span class="lab">Carbs (g)</span><input id="carb_goal" inputmode="numeric" value="${p.carb_goal ?? ""}" placeholder="280" /></label>
       <label class="field grow"><span class="lab">Fat (g)</span><input id="fat_goal" inputmode="numeric" value="${p.fat_goal ?? ""}" placeholder="70" /></label>
     </div>
+    <label class="field"><span class="lab">Steps per day</span><input id="steps_goal" inputmode="numeric" value="${p.steps_goal ?? ""}" placeholder="8000" /></label>
 
     <h2 class="section">My equipment</h2>
     <div class="small muted" style="margin:0 2px 10px">Bodyweight is always available.</div>
@@ -81,6 +82,7 @@ export async function render(el, ctx) {
         sex: val("sex"), activity: val("activity"), weight_goal: val("weight_goal"),
         kcal_goal: intOrNull("kcal_goal"), protein_goal: intOrNull("protein_goal"),
         carb_goal: intOrNull("carb_goal"), fat_goal: intOrNull("fat_goal"),
+        steps_goal: intOrNull("steps_goal"),
       });
       toast("Profile saved", "ok");
     } catch (err) {

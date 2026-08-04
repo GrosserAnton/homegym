@@ -1,11 +1,11 @@
 // Basic offline cache for the app shell + exercise data.
 // Cross-origin requests (Supabase API, esm.sh modules, exercise images) always go to the network.
-const CACHE = "maxbody-v6";
+const CACHE = "maxbody-v7";
 const ASSETS = [
   "./", "./index.html", "./styles.css", "./manifest.webmanifest",
   "./data/exercises.json",
   "./js/app.js", "./js/config.js", "./js/supabase.js", "./js/data.js",
-  "./js/generator.js", "./js/ui.js", "./js/store.js", "./js/exui.js", "./js/food.js", "./js/tdee.js",
+  "./js/generator.js", "./js/ui.js", "./js/store.js", "./js/exui.js", "./js/food.js", "./js/tdee.js", "./js/body.js",
   "./js/views/auth.js", "./js/views/home.js", "./js/views/library.js",
   "./js/views/plans.js", "./js/views/workout.js", "./js/views/nutrition.js",
   "./js/views/history.js", "./js/views/profile.js", "./js/views/weight.js",

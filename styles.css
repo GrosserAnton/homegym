@@ -190,3 +190,71 @@ input.mini{padding:9px 10px;font-size:15px;text-align:center}
 .wchart{display:block;width:100%;height:150px}
 details summary{list-style:none}
 details summary::-webkit-details-marker{display:none}
+
+/* ---------------- Dashboard (home) ---------------- */
+.dashhead{display:flex;align-items:center;justify-content:space-between;padding:4px 2px 0}
+.dashhead h1{font-family:var(--font-display);font-size:30px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;margin:0}
+.dashhead-actions{display:flex;align-items:center;gap:10px}
+.streak{display:inline-flex;align-items:center;gap:5px;font-size:15px;color:var(--text)}
+.streak b{font-family:var(--font-display);font-weight:700}
+.dashhead .btn.icon{width:40px;height:40px;color:var(--muted)}
+
+/* Workout carousel */
+.wcarousel{margin-bottom:6px}
+.wtrack{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.wtrack::-webkit-scrollbar{display:none}
+.wslide{
+  flex:0 0 100%;scroll-snap-align:center;display:flex;justify-content:space-between;gap:12px;
+  background:linear-gradient(135deg,#151b30,#0c0f1c);border:1px solid var(--border);border-radius:var(--radius);
+  padding:18px;min-height:168px;box-sizing:border-box;
+}
+.wslide.wempty{margin-bottom:6px}
+.wslide-info{display:flex;flex-direction:column;min-width:0}
+.wtitle{font-family:var(--font-display);font-size:30px;font-weight:600;line-height:1.05;letter-spacing:.3px}
+.wmeta{color:var(--muted);font-size:14px;margin-top:6px}
+.btn.wstart{
+  width:auto;align-self:flex-start;margin-top:auto;background:transparent;color:var(--accent-text);
+  border:1.5px solid var(--accent);padding:9px 26px;border-radius:11px;
+  font-family:var(--font-display);font-size:15px;letter-spacing:1.5px;
+}
+.wslide-body{display:flex;gap:4px;align-items:center;flex:0 0 auto}
+.bodyfigs{display:flex;gap:4px}
+.bodyfig{width:46px;height:104px;display:block}
+.wdots{display:flex;justify-content:center;gap:6px;margin-top:12px}
+.wdot{width:7px;height:7px;border-radius:50%;background:var(--muted-2);transition:.2s}
+.wdot.on{background:var(--accent-text);width:18px;border-radius:4px}
+
+/* Habit grid */
+.habitgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.hcard{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:14px;min-height:158px;display:flex;flex-direction:column;
+}
+.hcard.tap{cursor:pointer;transition:transform .08s ease,border-color .15s}
+.hcard.tap:active{transform:scale(.985)}
+.hcard .htitle{font-family:var(--font-display);font-size:20px;font-weight:600;line-height:1}
+.hcard .hsub{color:var(--muted);font-size:12px;margin-top:2px}
+.hcard .harrow{color:var(--muted-2);font-size:22px;line-height:1;font-weight:700}
+.hcard .hnum{font-family:var(--font-display);font-weight:700;font-size:19px;white-space:nowrap}
+.hcard .hnum small{font-size:11px;color:var(--muted);margin-left:2px;font-weight:600}
+
+/* Steps placeholder */
+.stepbars{display:flex;align-items:flex-end;gap:5px;height:58px;margin:14px 0 6px;opacity:.5}
+.stepbars i{flex:1;background:var(--muted-2);border-radius:3px 3px 0 0;min-height:6px}
+
+/* Calorie ring */
+.ring-wrap{position:relative;width:112px;height:112px;margin:8px auto 0}
+.ring-wrap svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring-center .rv{font-family:var(--font-display);font-size:26px;font-weight:700;line-height:1}
+.ring-center .rg{color:var(--muted);font-size:11px;margin-top:3px}
+
+/* 30-day dot heatmap + weekly progress */
+.dotgrid{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;margin:12px 0 10px}
+.dotgrid .dot{aspect-ratio:1;border-radius:3px;background:var(--surface-2)}
+.dotgrid .dot.on{background:var(--accent)}
+.hbar{height:4px;background:var(--surface-2);border-radius:3px;overflow:hidden;margin-top:auto}
+.hbar span{display:block;height:100%;background:var(--ok);border-radius:3px;transition:width .25s}
+.hfoot{margin-top:9px;font-size:13px;color:var(--muted)}
+.hfoot b{font-family:var(--font-display);font-size:16px;color:var(--text);font-weight:700}
+.hfoot.center{text-align:center}

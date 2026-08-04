@@ -8,10 +8,12 @@ export const ACTIVITY = [
   { id: "very_active", label: "Very active (hard training / physical job)", factor: 1.9 },
 ];
 
+// kcal = daily calorie offset from maintenance; protein = grams per kg bodyweight.
 export const WEIGHT_GOALS = [
-  { id: "lose", label: "Lose weight", kcal: -500 },
-  { id: "maintain", label: "Maintain", kcal: 0 },
-  { id: "gain", label: "Gain muscle", kcal: 350 },
+  { id: "recompose", label: "Body recomposition", kcal: 0, protein: 2.2 },
+  { id: "lose", label: "Lose fat", kcal: -500, protein: 2.2 },
+  { id: "maintain", label: "Maintain", kcal: 0, protein: 2.0 },
+  { id: "gain", label: "Gain muscle", kcal: 350, protein: 2.0 },
 ];
 
 // Returns { kcal_goal, protein_goal, fat_goal, carb_goal, tdee } or null if inputs incomplete.
@@ -21,9 +23,9 @@ export function computeTargets({ weight_kg, height_cm, age, sex, activity, weigh
   const bmr = 10 * w + 6.25 * h - 5 * a + (sex === "female" ? -161 : 5);
   const af = (ACTIVITY.find((x) => x.id === activity) || ACTIVITY[2]).factor;
   const tdee = bmr * af;
-  const goal = WEIGHT_GOALS.find((x) => x.id === weight_goal) || WEIGHT_GOALS[1];
+  const goal = WEIGHT_GOALS.find((x) => x.id === weight_goal) || WEIGHT_GOALS[0];
   const kcal = Math.round((tdee + goal.kcal) / 10) * 10;
-  const protein = Math.round(w * 2.0);          // 2 g per kg bodyweight
+  const protein = Math.round(w * (goal.protein || 2.0)); // g per kg bodyweight
   const fat = Math.round((kcal * 0.25) / 9);    // 25% of kcal from fat
   const carbs = Math.max(0, Math.round((kcal - protein * 4 - fat * 9) / 4));
   return { kcal_goal: kcal, protein_goal: protein, fat_goal: fat, carb_goal: carbs, tdee: Math.round(tdee) };
