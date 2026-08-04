@@ -39,26 +39,29 @@ export function openModal(html) {
 }
 
 // Drag the bottom sheet down to dismiss it (in addition to Cancel / backdrop tap).
+const DEAD_ZONE = 12; // px of finger travel before the sheet starts following
 function attachSwipeToClose(sheet) {
   if (!sheet) return;
-  let startY = 0, dy = 0, dragging = false;
+  let startY = 0, dy = 0, t0 = 0, dragging = false;
   const start = (e) => {
     if (sheet.scrollTop > 0) return; // let inner content scroll first
     if (e.target.closest("input, select, textarea, button, a, [contenteditable]")) return;
-    dragging = true; dy = 0;
+    dragging = true; dy = 0; t0 = Date.now();
     startY = e.touches[0].clientY;
     sheet.style.transition = "none";
   };
   const move = (e) => {
     if (!dragging) return;
     dy = e.touches[0].clientY - startY;
-    if (dy > 0) sheet.style.transform = `translateY(${dy}px)`;
+    sheet.style.transform = dy > DEAD_ZONE ? `translateY(${dy - DEAD_ZONE}px)` : "translateY(0)";
   };
   const end = () => {
     if (!dragging) return;
     dragging = false;
+    const v = dy / Math.max(1, Date.now() - t0); // px per ms (downward speed)
     sheet.style.transition = "transform .22s ease";
-    if (dy > 110) closeModal();
+    // Dismiss only on a clearly deliberate gesture: a long drag OR a quick flick.
+    if (dy > 150 || (dy > 60 && v > 0.6)) closeModal();
     else sheet.style.transform = "translateY(0)";
   };
   sheet.addEventListener("touchstart", start, { passive: true });
