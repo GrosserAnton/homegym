@@ -1,5 +1,5 @@
 import {
-  state, loadNutrition, addNutrition, deleteNutrition, skipRecurringForDate,
+  state, loadNutrition, addNutrition, deleteNutrition, updateNutrition, skipRecurringForDate,
   copyEntriesToDates, recentFoods,
   loadMeals, saveMeal, deleteMeal, loadRecurring, saveRecurring, deleteRecurring,
 } from "../store.js";
@@ -151,7 +151,7 @@ function mealsHtml(entries) {
   }).join("");
 }
 function entryRow(e) {
-  return `<div class="food-row">
+  return `<div class="food-row tap" data-edit="${esc(e.id)}" style="cursor:pointer">
     <div class="grow"><div class="name">${e.recurring_id ? '<span title="Recurring">↻ </span>' : ""}${esc(e.name)}</div>
       <div class="tags">${e.amount_g ? Math.round(e.amount_g) + " g · " : ""}${Math.round(e.kcal)} kcal · P${Math.round(e.protein)} C${Math.round(e.carbs)} F${Math.round(e.fat)}</div></div>
     <button class="btn icon danger sm" data-del="${esc(e.id)}" data-rec="${e.recurring_id || ""}">✕</button>
@@ -178,7 +178,7 @@ function wireBody(body, entries, draw) {
   // except when tapping the per-item delete (✕) or the meal actions (⋯) button.
   body.querySelectorAll("[data-mealcard]").forEach((c) => {
     c.onclick = (e) => {
-      if (e.target.closest("[data-del], [data-mealmenu], [data-mealtoggle]")) return;
+      if (e.target.closest("[data-del], [data-mealmenu], [data-mealtoggle], [data-edit]")) return;
       openAdd(c.dataset.mealcard, draw);
     };
   });
@@ -192,6 +192,14 @@ function wireBody(body, entries, draw) {
       if (nowCollapsed) expanded.delete(id); else expanded.add(id);
       b.textContent = nowCollapsed ? "▸" : "▾";
       b.title = nowCollapsed ? "Show items" : "Hide items";
+    };
+  });
+  // Tap a logged item (not the ✕) to edit its amount / meal.
+  body.querySelectorAll("[data-edit]").forEach((el) => {
+    el.onclick = (e) => {
+      if (e.target.closest("[data-del]")) return;
+      const entry = entries.find((x) => x.id === el.dataset.edit);
+      if (entry) openEditEntry(entry, draw);
     };
   });
   body.querySelectorAll("[data-del]").forEach((b) => {
@@ -297,9 +305,12 @@ function quickRow(r, i) {
     <span class="pill">+ add</span></div>`;
 }
 
-function openPortion(food, meal, onDone) {
+function openEditEntry(entry, onDone) {
+  openPortion(foodFromEntry(entry), entry.meal || "breakfast", onDone, entry);
+}
+function openPortion(food, meal, onDone, edit) {
   const pieceG = food.piece_g && food.piece_g > 0 ? food.piece_g : 0;
-  const def = pieceG || (food.serving_g && food.serving_g > 0 ? food.serving_g : 100);
+  const def = edit ? edit.amount_g || 100 : pieceG || (food.serving_g && food.serving_g > 0 ? food.serving_g : 100);
   const wrap = openModal(`<div class="grabber"></div>
     <h2 style="margin:0 0 4px">${esc(food.name)}</h2>
     <div class="muted small" style="margin-bottom:12px">${food.brand ? esc(food.brand) + " · " : ""}${Math.round(food.per100.kcal)} kcal / 100 g</div>
@@ -309,7 +320,7 @@ function openPortion(food, meal, onDone) {
     </div>
     <label class="field"><span class="lab">Meal</span><select id="meal">${MEALS.map((m) => `<option value="${m.id}" ${m.id === meal ? "selected" : ""}>${m.label}</option>`).join("")}</select></label>
     <div class="card" id="prev"></div>
-    <button class="btn primary" id="addb" style="margin-top:8px">Add</button>
+    <button class="btn primary" id="addb" style="margin-top:8px">${edit ? "Save" : "Add"}</button>
     <button class="btn ghost" data-close style="margin-top:10px">Cancel</button>`);
   const box = wrap.querySelector(".modal");
   const amt = box.querySelector("#amt");
@@ -330,10 +341,13 @@ function openPortion(food, meal, onDone) {
     const g = Number(amt.value) || 0;
     if (g <= 0) { toast("Enter an amount", "error"); return; }
     const s = scale(food.per100, g);
+    const macros = { kcal: s.kcal, protein: s.protein, carbs: s.carbs, fat: s.fat, micros: s.micros };
+    const targetMeal = box.querySelector("#meal").value;
     try {
-      await addNutrition({ log_date: ds(current), meal: box.querySelector("#meal").value, name: food.name, brand: food.brand || null, code: food.code || null, amount_g: g, kcal: s.kcal, protein: s.protein, carbs: s.carbs, fat: s.fat, micros: s.micros });
-      closeModal(); toast("Added 🍽️", "ok"); onDone();
-    } catch (err) { toast(err.message || "Could not add", "error"); }
+      if (edit) await updateNutrition(edit.id, { meal: targetMeal, amount_g: g, ...macros });
+      else await addNutrition({ log_date: ds(current), meal: targetMeal, name: food.name, brand: food.brand || null, code: food.code || null, amount_g: g, ...macros });
+      closeModal(); toast(edit ? "Updated ✏️" : "Added 🍽️", "ok"); onDone();
+    } catch (err) { toast(err.message || "Could not save", "error"); }
   };
 }
 

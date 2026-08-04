@@ -214,6 +214,7 @@ details summary::-webkit-details-marker{display:none}
 }
 .wslide.wempty{margin-bottom:6px}
 .wslide-info{display:flex;flex-direction:column;min-width:0}
+.wday-label{color:var(--gold);font-size:12px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:4px}
 .wtitle{font-family:var(--font-display);font-size:30px;font-weight:600;line-height:1.05;letter-spacing:.3px}
 .wmeta{color:var(--muted);font-size:14px;margin-top:6px}
 .btn.wstart{

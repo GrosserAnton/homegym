@@ -4,6 +4,8 @@ import { generatePlan } from "../generator.js";
 import { openPicker } from "../exui.js";
 import { esc, toast, exerciseFigure } from "../ui.js";
 
+const WD = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]; // 0 = Monday
+
 export async function render(el, ctx) {
   const { query } = ctx;
   if (query.new === "auto") return renderAutoGenerate(el, ctx);
@@ -90,8 +92,12 @@ async function renderBuilder(el, ctx, id) {
 
   function dayBlock(d, di) {
     return `<div class="card" data-day="${di}">
-      <div class="row between" style="margin-bottom:10px">
-        <input class="dayname" data-di="${di}" value="${esc(d.name)}" style="font-weight:700" />
+      <div class="row between" style="margin-bottom:10px;gap:8px">
+        <input class="dayname grow" data-di="${di}" value="${esc(d.name)}" style="font-weight:700" />
+        <select class="dayweekday" data-di="${di}" style="width:auto;padding:11px 8px;flex:0 0 auto">
+          <option value="">Any day</option>
+          ${WD.map((w, i) => `<option value="${i}" ${d.weekday === i ? "selected" : ""}>${w}</option>`).join("")}
+        </select>
         <button class="btn icon danger" data-delday="${di}" title="Remove day">✕</button>
       </div>
       ${d.exercises.map((ex, xi) => exRow(ex, di, xi)).join("") || `<div class="muted small" style="margin:4px 2px 10px">No exercises yet.</div>`}
@@ -116,6 +122,9 @@ async function renderBuilder(el, ctx, id) {
     el.querySelector("#pname").oninput = (e) => { plan.name = e.target.value; };
     el.querySelectorAll(".dayname").forEach((inp) => {
       inp.oninput = () => { plan.days[+inp.dataset.di].name = inp.value; };
+    });
+    el.querySelectorAll(".dayweekday").forEach((sel) => {
+      sel.onchange = () => { plan.days[+sel.dataset.di].weekday = sel.value === "" ? null : Number(sel.value); };
     });
     el.querySelector("#addday").onclick = () => { plan.days.push({ name: "Day " + (plan.days.length + 1), exercises: [] }); draw(); };
     el.querySelectorAll("[data-delday]").forEach((b) => { b.onclick = () => { plan.days.splice(+b.dataset.delday, 1); draw(); }; });

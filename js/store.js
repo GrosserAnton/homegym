@@ -186,6 +186,11 @@ export async function deleteNutrition(id) {
   const { error } = await supa.from("gym_nutrition_logs").delete().eq("id", id);
   if (error) throw error;
 }
+export async function updateNutrition(id, patch) {
+  const { data, error } = await supa.from("gym_nutrition_logs").update(patch).eq("id", id).select().maybeSingle();
+  if (error) throw error;
+  return data;
+}
 export async function loadNutritionRange(from, to) {
   const { data, error } = await supa
     .from("gym_nutrition_logs").select("log_date,kcal")

@@ -7,6 +7,8 @@ const ds = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0"
 const fmt = (n) => Math.round(n * 10) / 10;
 const RING_R = 42;
 const RING_C = 2 * Math.PI * RING_R;
+const WD_LONG = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const todayWd = () => (new Date().getDay() + 6) % 7; // Monday = 0
 
 export async function render(el, ctx) {
   const profile = state.profile || {};
@@ -102,8 +104,11 @@ function workoutSlide(plan, dayIndex) {
   const day = plan.days[dayIndex];
   const { primary, secondary } = musclesForDay(day);
   const n = day.exercises.length;
+  const wd = day.weekday;
+  const label = Number.isInteger(wd) ? (wd === todayWd() ? "Today" : WD_LONG[wd]) : "";
   return `<div class="wslide" data-day="${dayIndex}">
     <div class="wslide-info">
+      ${label ? `<div class="wday-label">${label}</div>` : ""}
       <div class="wtitle">${esc(day.name)}</div>
       <div class="wmeta">${fmtDuration(estimateMinutes(day))} · ${n} exercise${n !== 1 ? "s" : ""}</div>
       <button class="btn wstart" data-start="${dayIndex}">START</button>
@@ -137,11 +142,16 @@ function fmtDuration(min) {
 
 // Recommend the next day in the split: the one after the most recently logged day.
 function orderedDayIndexes(plan) {
-  const names = plan.days.map((d) => d.name);
-  return rotate(
-    plan.days.map((_, i) => i),
-    startIndex(plan, names)
-  );
+  const days = plan.days;
+  const idx = days.map((_, i) => i);
+  // If days are pinned to weekdays, order them from today onward (today first).
+  if (days.some((d) => Number.isInteger(d.weekday))) {
+    const today = todayWd();
+    const off = (wd) => (Number.isInteger(wd) ? (wd - today + 7) % 7 : 99); // unassigned last
+    return idx.slice().sort((a, b) => off(days[a].weekday) - off(days[b].weekday));
+  }
+  // Otherwise fall back to rotating after the most recently trained day.
+  return rotate(idx, startIndex(plan, days.map((d) => d.name)));
 }
 function startIndex(plan, names) {
   const sessions = state.__lastSessions || [];
