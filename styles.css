@@ -164,3 +164,12 @@ input.mini{padding:9px 10px;font-size:15px;text-align:center}
 .set-line .done.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .divider{height:1px;background:var(--border);margin:18px 0}
 .pill{display:inline-block;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:4px 11px;font-size:12px;color:var(--muted);font-weight:600}
+
+/* Nutrition */
+.pbar{height:8px;background:var(--surface-2);border-radius:6px;overflow:hidden;margin-top:6px}
+.pbar span{display:block;height:100%;background:var(--accent);border-radius:6px;transition:width .25s}
+.macro-row{display:flex;gap:10px}
+.macro{flex:1;text-align:center}
+.macro .mv{font-weight:800;font-size:16px}
+.macro .ml{color:var(--muted);font-size:11px;margin-top:1px}
+.over{color:var(--danger);font-weight:700}

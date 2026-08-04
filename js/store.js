@@ -154,3 +154,40 @@ export async function workoutCount() {
   const { count } = await supa.from("gym_logs").select("session_id", { count: "exact", head: true });
   return count || 0;
 }
+
+// ---------- nutrition ----------
+export async function loadNutrition(logDate) {
+  const { data, error } = await supa
+    .from("gym_nutrition_logs").select("*")
+    .eq("log_date", logDate)
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return data || [];
+}
+export async function addNutrition(entry) {
+  const payload = { ...entry, user_id: state.user.id };
+  const { data, error } = await supa.from("gym_nutrition_logs").insert(payload).select().maybeSingle();
+  if (error) throw error;
+  return data;
+}
+export async function deleteNutrition(id) {
+  const { error } = await supa.from("gym_nutrition_logs").delete().eq("id", id);
+  if (error) throw error;
+}
+export async function recentFoods(limit = 12) {
+  const { data } = await supa
+    .from("gym_nutrition_logs")
+    .select("name,brand,code,amount_g,kcal,protein,carbs,fat")
+    .order("created_at", { ascending: false })
+    .limit(80);
+  const seen = new Set();
+  const out = [];
+  for (const r of data || []) {
+    const k = (r.name + "|" + (r.brand || "")).toLowerCase();
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(r);
+    if (out.length >= limit) break;
+  }
+  return out;
+}

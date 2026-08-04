@@ -8,6 +8,7 @@ import * as Library from "./views/library.js";
 import * as Plans from "./views/plans.js";
 import * as Workout from "./views/workout.js";
 import * as History from "./views/history.js";
+import * as Nutrition from "./views/nutrition.js";
 import * as Profile from "./views/profile.js";
 
 const appEl = document.getElementById("app");
@@ -16,6 +17,7 @@ const ICON = {
   home: '<path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/>',
   library: '<circle cx="5" cy="12" r="2.4"/><circle cx="19" cy="12" r="2.4"/><line x1="7.4" y1="12" x2="16.6" y2="12"/>',
   plans: '<rect x="5" y="4" width="14" height="17" rx="2"/><line x1="8.5" y1="9" x2="15.5" y2="9"/><line x1="8.5" y1="13" x2="15.5" y2="13"/><line x1="8.5" y1="17" x2="12.5" y2="17"/>',
+  food: '<path d="M12 8.2c2-2.2 6-1.4 6 2.3 0 3.3-2.7 7-4.3 7-.8 0-1-.4-1.7-.4s-.9.4-1.7.4C8.7 17.5 6 13.8 6 10.5c0-3.7 4-4.5 6-2.3z"/><path d="M12 8.2V6c0-1.1.9-2 2-2"/>',
   history: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/>',
   profile: '<circle cx="12" cy="8" r="3.6"/><path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6"/>',
 };
@@ -29,7 +31,8 @@ function go(path) { location.hash = "#/" + path; }
 
 const ROUTES = {
   "": ["home", Home], home: ["home", Home], library: ["library", Library],
-  plans: ["plans", Plans], workout: ["plans", Workout], history: ["history", History], profile: ["profile", Profile],
+  plans: ["plans", Plans], workout: ["plans", Workout], food: ["food", Nutrition],
+  history: ["history", History], profile: ["profile", Profile],
 };
 
 function navHtml(active) {
@@ -37,7 +40,7 @@ function navHtml(active) {
     `<a href="#/${id}" data-tab="${id}" class="${id === active ? "active" : ""}">
       <svg class="ic" viewBox="0 0 24 24">${ICON[id]}</svg><span>${label}</span></a>`;
   return `<nav class="tabbar"><div class="inner">
-    ${tab("home", "Home")}${tab("library", "Exercises")}${tab("plans", "Plans")}${tab("history", "History")}${tab("profile", "Profile")}
+    ${tab("home", "Home")}${tab("library", "Exercises")}${tab("plans", "Plans")}${tab("food", "Food")}${tab("history", "History")}${tab("profile", "Profile")}
   </div></nav>`;
 }
 

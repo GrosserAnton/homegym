@@ -12,6 +12,12 @@ export async function render(el, ctx) {
       <select id="days">${[2, 3, 4, 5, 6].map((n) => `<option value="${n}" ${+p.days_per_week === n ? "selected" : ""}>${n} days</option>`).join("")}</select></label>
     <label class="field"><span class="lab">Goal</span><select id="goal"><option value="muscle" selected>Muscle building</option></select></label>
 
+    <h2 class="section">Daily nutrition goals</h2>
+    <div class="row" style="gap:10px">
+      <label class="field grow"><span class="lab">Calories (kcal)</span><input id="kcal_goal" inputmode="numeric" value="${p.kcal_goal ?? ""}" placeholder="e.g. 2500" /></label>
+      <label class="field grow"><span class="lab">Protein (g)</span><input id="protein_goal" inputmode="numeric" value="${p.protein_goal ?? ""}" placeholder="e.g. 160" /></label>
+    </div>
+
     <h2 class="section">My equipment</h2>
     <div class="small muted" style="margin:0 2px 10px">Bodyweight is always available.</div>
     <div class="toggle-grid" id="equip">
@@ -28,12 +34,15 @@ export async function render(el, ctx) {
   });
   el.querySelector("#save").addEventListener("click", async () => {
     const equipment = [...el.querySelectorAll("#equip .toggle.on[data-eq]")].map((t) => t.dataset.eq);
+    const intOrNull = (sel) => { const n = parseInt(el.querySelector(sel).value, 10); return Number.isFinite(n) && n > 0 ? n : null; };
     try {
       await saveProfile({
         username: el.querySelector("#username").value.trim(),
         days_per_week: +el.querySelector("#days").value,
         goal: "muscle",
         equipment,
+        kcal_goal: intOrNull("#kcal_goal"),
+        protein_goal: intOrNull("#protein_goal"),
       });
       toast("Profile saved", "ok");
     } catch (err) {
