@@ -16,6 +16,7 @@ const MEALS = [
 const WD = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
 
 let current = new Date();
+const expanded = new Set(); // meal ids the user expanded; meals start collapsed (summary only)
 
 const ds = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
@@ -118,19 +119,33 @@ function macroCol(label, val, goal) {
     ${goal ? bar(v, goal) : ""}</div>`;
 }
 
+function mealTotals(items) {
+  return items.reduce(
+    (a, e) => ({ kcal: a.kcal + +e.kcal, protein: a.protein + +e.protein, carbs: a.carbs + +e.carbs, fat: a.fat + +e.fat }),
+    { kcal: 0, protein: 0, carbs: 0, fat: 0 }
+  );
+}
 function mealsHtml(entries) {
   return MEALS.map((m) => {
     const items = entries.filter((e) => (e.meal || "breakfast") === m.id);
-    const kcal = Math.round(items.reduce((a, e) => a + +e.kcal, 0));
-    return `<div class="card tap" data-mealcard="${m.id}">
-      <div class="row between" style="margin-bottom:${items.length ? "10px" : "0"}">
-        <div class="row" style="gap:8px"><span>${m.icon}</span><b>${m.label}</b>${kcal ? `<span class="muted small">${kcal} kcal</span>` : ""}</div>
+    const t = mealTotals(items);
+    const collapsed = items.length && !expanded.has(m.id);
+    const summary = items.length
+      ? `<div class="meal-macros">${Math.round(t.kcal)} kcal · P${Math.round(t.protein)} · C${Math.round(t.carbs)} · F${Math.round(t.fat)}</div>`
+      : "";
+    return `<div class="card tap meal${collapsed ? " collapsed" : ""}" data-mealcard="${m.id}">
+      <div class="row between">
+        <div class="grow" style="min-width:0">
+          <div class="row" style="gap:8px"><span>${m.icon}</span><b>${m.label}</b></div>
+          ${summary}
+        </div>
         <div class="row" style="gap:6px">
           ${items.length ? `<button class="btn icon ghost sm" data-mealmenu="${m.id}" title="Meal actions">⋯</button>` : ""}
           <button class="btn icon sm" data-addmeal="${m.id}" title="Add food">+</button>
+          ${items.length ? `<button class="btn icon ghost sm meal-toggle" data-mealtoggle="${m.id}" title="${collapsed ? "Show items" : "Hide items"}">${collapsed ? "▸" : "▾"}</button>` : ""}
         </div>
       </div>
-      ${items.map(entryRow).join("")}
+      ${items.length ? `<div class="meal-items">${items.map(entryRow).join("")}</div>` : ""}
     </div>`;
   }).join("");
 }
@@ -162,8 +177,20 @@ function wireBody(body, entries, draw) {
   // except when tapping the per-item delete (✕) or the meal actions (⋯) button.
   body.querySelectorAll("[data-mealcard]").forEach((c) => {
     c.onclick = (e) => {
-      if (e.target.closest("[data-del], [data-mealmenu]")) return;
+      if (e.target.closest("[data-del], [data-mealmenu], [data-mealtoggle]")) return;
       openAdd(c.dataset.mealcard, draw);
+    };
+  });
+  // Collapse / expand a meal's item list (default collapsed → summary only).
+  body.querySelectorAll("[data-mealtoggle]").forEach((b) => {
+    b.onclick = (e) => {
+      e.stopPropagation();
+      const id = b.dataset.mealtoggle;
+      const card = b.closest("[data-mealcard]");
+      const nowCollapsed = card.classList.toggle("collapsed");
+      if (nowCollapsed) expanded.delete(id); else expanded.add(id);
+      b.textContent = nowCollapsed ? "▸" : "▾";
+      b.title = nowCollapsed ? "Show items" : "Hide items";
     };
   });
   body.querySelectorAll("[data-del]").forEach((b) => {
