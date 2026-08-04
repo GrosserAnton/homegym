@@ -1,6 +1,6 @@
-# HomeGym
+# Maxbody
 
-A rule-based training buddy for your home gym. Build-free PWA — plain HTML/JS + [Supabase](https://supabase.com) over CDN, no build step. Just upload and go.
+Training &amp; nutrition tracker for your home gym. Build-free PWA — plain HTML/JS + [Supabase](https://supabase.com) over CDN, no build step. Just upload and go.
 
 ## Features
 
@@ -9,7 +9,9 @@ A rule-based training buddy for your home gym. Build-free PWA — plain HTML/JS 
 - **Exercise library** — search & filter by muscle group and equipment, with start/end movement images.
 - **Workout tracking** — log weight & reps per set; last values are pre-filled next time.
 - **History** of every logged session.
-- Cross-device sync via Supabase (email + password login).
+- **Nutrition diary** (free via Open Food Facts): meals (breakfast/lunch/dinner/snacks), calories + macros + micronutrients, daily targets with "remaining", week view, saved meals, recurring meals, copy-day, barcode scanning.
+- **Calorie-needs calculator** (Mifflin-St Jeor) from body stats + goal.
+- Cross-device sync via Supabase. Login with **username** (registration with email once).
 
 Exercise data & images: [yuhonas/free-exercise-db](https://github.com/yuhonas/free-exercise-db) (public domain), images served via jsDelivr.
 

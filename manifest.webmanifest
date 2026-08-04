@@ -1,7 +1,7 @@
 {
-  "name": "HomeGym",
-  "short_name": "HomeGym",
-  "description": "Rule-based training buddy for your home gym.",
+  "name": "Maxbody",
+  "short_name": "Maxbody",
+  "description": "Training & nutrition tracker for your home gym.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

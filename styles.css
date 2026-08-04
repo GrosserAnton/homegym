@@ -173,3 +173,19 @@ input.mini{padding:9px 10px;font-size:15px;text-align:center}
 .macro .mv{font-weight:800;font-size:16px}
 .macro .ml{color:var(--muted);font-size:11px;margin-top:1px}
 .over{color:var(--danger);font-weight:700}
+.weekstrip{display:flex;align-items:center;gap:4px;margin-bottom:12px}
+.wdays{display:flex;flex:1;gap:4px;justify-content:space-between}
+.wday{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:7px 0;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer}
+.wday .wn{font-size:10px;color:var(--muted)}
+.wday .wnum{font-size:15px;font-weight:700}
+.wday.on{border-color:var(--accent);background:var(--surface-2)}
+.wday.on .wnum{color:var(--accent-text)}
+.wday.today .wn{color:var(--gold);font-weight:700}
+.food-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--border)}
+.food-row:first-child{border-top:0}
+.food-row .name{font-weight:600;font-size:14px}
+.food-row .tags{color:var(--muted);font-size:12px;margin-top:1px}
+.micro-row{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;padding:6px 0 2px}
+.btn.icon.sm{width:34px;height:34px;font-size:17px}
+details summary{list-style:none}
+details summary::-webkit-details-marker{display:none}

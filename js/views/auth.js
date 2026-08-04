@@ -12,8 +12,8 @@ function view() {
   const isLogin = mode === "login";
   return `<div class="auth-wrap">
     <div class="brand">
-      <div class="logo">Home<b>Gym</b></div>
-      <div class="tag">Your home-gym training buddy</div>
+      <div class="logo">Max<b>body</b></div>
+      <div class="tag">Training &amp; nutrition, all in one</div>
     </div>
     <form id="auth-form" novalidate>
       <label class="field"><span class="lab">Username</span>

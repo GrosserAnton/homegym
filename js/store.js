@@ -156,7 +156,19 @@ export async function workoutCount() {
 }
 
 // ---------- nutrition ----------
+const FOOD_FIELDS = "name,brand,code,amount_g,meal,kcal,protein,carbs,fat,micros";
+
+function rowFromItem(it, logDate, meal, source = "manual", recurringId = null) {
+  return {
+    user_id: state.user.id, log_date: logDate, meal: meal || it.meal || "breakfast",
+    source, recurring_id: recurringId,
+    name: it.name, brand: it.brand || null, code: it.code || null, amount_g: it.amount_g || null,
+    kcal: it.kcal || 0, protein: it.protein || 0, carbs: it.carbs || 0, fat: it.fat || 0, micros: it.micros || {},
+  };
+}
+
 export async function loadNutrition(logDate) {
+  await ensureRecurringForDate(logDate);
   const { data, error } = await supa
     .from("gym_nutrition_logs").select("*")
     .eq("log_date", logDate)
@@ -174,12 +186,25 @@ export async function deleteNutrition(id) {
   const { error } = await supa.from("gym_nutrition_logs").delete().eq("id", id);
   if (error) throw error;
 }
-export async function recentFoods(limit = 12) {
+export async function loadNutritionRange(from, to) {
+  const { data, error } = await supa
+    .from("gym_nutrition_logs").select("log_date,kcal")
+    .gte("log_date", from).lte("log_date", to);
+  if (error) throw error;
+  return data || [];
+}
+export async function copyEntriesToDates(entries, dates, mealOverride) {
+  const rows = [];
+  for (const dt of dates) for (const e of entries) rows.push(rowFromItem(e, dt, mealOverride || e.meal));
+  if (!rows.length) return 0;
+  const { error } = await supa.from("gym_nutrition_logs").insert(rows);
+  if (error) throw error;
+  return rows.length;
+}
+export async function recentFoods(limit = 15) {
   const { data } = await supa
-    .from("gym_nutrition_logs")
-    .select("name,brand,code,amount_g,kcal,protein,carbs,fat")
-    .order("created_at", { ascending: false })
-    .limit(80);
+    .from("gym_nutrition_logs").select(FOOD_FIELDS)
+    .order("created_at", { ascending: false }).limit(120);
   const seen = new Set();
   const out = [];
   for (const r of data || []) {
@@ -190,4 +215,72 @@ export async function recentFoods(limit = 12) {
     if (out.length >= limit) break;
   }
   return out;
+}
+
+// ---------- saved meals ----------
+export async function loadMeals() {
+  const { data, error } = await supa.from("gym_meals").select("*").order("created_at", { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+export async function saveMeal(name, items) {
+  const { data, error } = await supa.from("gym_meals").insert({ user_id: state.user.id, name, items }).select().maybeSingle();
+  if (error) throw error;
+  return data;
+}
+export async function deleteMeal(id) {
+  const { error } = await supa.from("gym_meals").delete().eq("id", id);
+  if (error) throw error;
+}
+
+// ---------- recurring meals ----------
+export async function loadRecurring() {
+  const { data, error } = await supa.from("gym_recurring").select("*").order("created_at", { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+export async function saveRecurring(rule) {
+  const payload = {
+    user_id: state.user.id, name: rule.name || null, meal: rule.meal || "breakfast",
+    items: rule.items || [], freq: rule.freq || "daily", weekday: rule.weekday ?? null,
+    start_date: rule.start_date || new Date().toISOString().slice(0, 10), active: rule.active !== false,
+  };
+  if (rule.id) payload.id = rule.id;
+  const { data, error } = await supa.from("gym_recurring").upsert(payload).select().maybeSingle();
+  if (error) throw error;
+  return data;
+}
+export async function deleteRecurring(id) {
+  const { error } = await supa.from("gym_recurring").delete().eq("id", id);
+  if (error) throw error;
+}
+export async function skipRecurringForDate(recurringId, logDate) {
+  const { data } = await supa.from("gym_recurring").select("skips").eq("id", recurringId).maybeSingle();
+  const skips = new Set(data?.skips || []);
+  skips.add(logDate);
+  await supa.from("gym_recurring").update({ skips: [...skips] }).eq("id", recurringId);
+}
+
+// Materialize recurring meals into a day's log (once), respecting per-day skips.
+async function ensureRecurringForDate(logDate) {
+  const rules = await loadRecurring();
+  const active = rules.filter((r) => r.active);
+  if (!active.length) return;
+  const weekday = new Date(logDate + "T00:00:00").getDay();
+  const applicable = active.filter((r) =>
+    logDate >= r.start_date &&
+    (r.freq === "daily" || (r.freq === "weekly" && r.weekday === weekday)) &&
+    !(r.skips || []).includes(logDate)
+  );
+  if (!applicable.length) return;
+  const { data: existing } = await supa
+    .from("gym_nutrition_logs").select("recurring_id")
+    .eq("log_date", logDate).not("recurring_id", "is", null);
+  const done = new Set((existing || []).map((r) => r.recurring_id));
+  const rows = [];
+  for (const r of applicable) {
+    if (done.has(r.id)) continue;
+    for (const it of r.items || []) rows.push(rowFromItem(it, logDate, r.meal, "recurring", r.id));
+  }
+  if (rows.length) await supa.from("gym_nutrition_logs").insert(rows);
 }
