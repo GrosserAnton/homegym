@@ -83,7 +83,9 @@ async function main() {
   });
 
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("./sw.js").catch(() => {});
+    // Versioned URL so a CDN that stubbornly caches /sw.js can't pin an old
+    // worker — bump ?v= together with the CACHE name in sw.js on each release.
+    navigator.serviceWorker.register("./sw.js?v=9").catch(() => {});
   }
 }
 
