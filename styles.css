@@ -164,6 +164,7 @@ input.mini{padding:9px 10px;font-size:15px;text-align:center}
 .set-line .done.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .divider{height:1px;background:var(--border);margin:18px 0}
 .pill{display:inline-block;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:4px 11px;font-size:12px;color:var(--muted);font-weight:600}
+.pill.gold{background:rgba(232,194,104,.14);border-color:rgba(232,194,104,.45);color:var(--gold)}
 
 /* Nutrition */
 .pbar{height:8px;background:var(--surface-2);border-radius:6px;overflow:hidden;margin-top:6px}

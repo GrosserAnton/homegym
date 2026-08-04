@@ -1,4 +1,4 @@
-import { state, loadPlans, savePlan, deletePlan, getExercise } from "../store.js";
+import { state, loadPlans, savePlan, deletePlan, getExercise, saveProfile } from "../store.js";
 import { allowedDbEquipment, imageUrl } from "../data.js";
 import { generatePlan } from "../generator.js";
 import { openPicker } from "../exui.js";
@@ -15,29 +15,41 @@ export async function render(el, ctx) {
 
 async function renderList(el, ctx) {
   const plans = await loadPlans();
+  const activeId = (state.profile || {}).active_plan_id;
+  const multi = plans.length > 1;
   el.innerHTML = `
     <div class="topbar"><div><h1>Plans</h1></div></div>
+    ${multi ? `<div class="muted small" style="margin:0 2px 12px">Pick the plan you're currently training — the dashboard uses it for today's workout.</div>` : ""}
     <div class="btn-row" style="margin-bottom:14px">
       <button class="btn primary" id="gen">⚡ Auto-generate</button>
       <button class="btn" id="empty">+ New plan</button>
     </div>
     <div id="list">${
-      plans.length ? plans.map(card).join("") : `<div class="empty"><div class="big">📋</div><div>No plans yet.</div></div>`
+      plans.length ? plans.map((p) => card(p, activeId, multi)).join("") : `<div class="empty"><div class="big">📋</div><div>No plans yet.</div></div>`
     }</div>`;
   el.querySelector("#gen").addEventListener("click", () => ctx.go("plans?new=auto"));
   el.querySelector("#empty").addEventListener("click", () => ctx.go("plans?new=empty"));
-  el.querySelector("#list").addEventListener("click", (e) => {
+  el.querySelector("#list").addEventListener("click", async (e) => {
+    const sa = e.target.closest("[data-setactive]");
+    if (sa) {
+      e.stopPropagation();
+      try { await saveProfile({ active_plan_id: sa.dataset.setactive }); toast("Active plan set", "ok"); renderList(el, ctx); }
+      catch (err) { toast(err.message || "Could not set active", "error"); }
+      return;
+    }
     const c = e.target.closest("[data-plan]");
     if (c) ctx.go("plans?id=" + c.dataset.plan);
   });
 }
 
-function card(p) {
+function card(p, activeId, multi) {
   const days = (p.days || []).length;
+  const isActive = multi && p.id === activeId;
+  const setBtn = multi && p.id !== activeId ? `<button class="btn sm" data-setactive="${esc(p.id)}">Set active</button>` : "";
   return `<div class="card tap" data-plan="${esc(p.id)}"><div class="row between">
-    <div class="grow"><div style="font-weight:700;font-size:16px">${esc(p.name)}</div>
+    <div class="grow"><div style="font-weight:700;font-size:16px">${esc(p.name)} ${isActive ? '<span class="pill gold">Active</span>' : ""}</div>
       <div class="muted small">${days} day${days !== 1 ? "s" : ""} · ${p.source === "auto" ? "auto" : "custom"}</div></div>
-    <span class="pill">Open</span></div></div>`;
+    <div class="row" style="gap:8px">${setBtn}<span class="pill">Open</span></div></div></div>`;
 }
 
 async function renderAutoGenerate(el, ctx) {

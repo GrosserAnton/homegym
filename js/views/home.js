@@ -20,7 +20,7 @@ export async function render(el, ctx) {
     loadNutrition(ds(today)).catch(() => []),
   ]);
 
-  const plan = plans[0] || null; // most recently updated
+  const plan = plans.find((p) => p.id === profile.active_plan_id) || plans[0] || null;
   const workoutDays = workoutDateSet(sessions);
   const weightDays = new Set((weights || []).map((w) => w.log_date));
   const streak = currentStreak(workoutDays);
