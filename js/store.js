@@ -284,3 +284,26 @@ async function ensureRecurringForDate(logDate) {
   }
   if (rows.length) await supa.from("gym_nutrition_logs").insert(rows);
 }
+
+// ---------- body weight ----------
+function localToday() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+export async function loadWeights() {
+  const { data, error } = await supa.from("gym_weight_logs").select("*").order("log_date", { ascending: true });
+  if (error) throw error;
+  return data || [];
+}
+export async function addWeight(logDate, kg) {
+  const { data, error } = await supa.from("gym_weight_logs")
+    .upsert({ user_id: state.user.id, log_date: logDate, weight_kg: kg }, { onConflict: "user_id,log_date" })
+    .select().maybeSingle();
+  if (error) throw error;
+  if (logDate === localToday()) { try { await saveProfile({ weight_kg: kg }); } catch (e) {} }
+  return data;
+}
+export async function deleteWeight(id) {
+  const { error } = await supa.from("gym_weight_logs").delete().eq("id", id);
+  if (error) throw error;
+}

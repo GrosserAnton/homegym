@@ -11,6 +11,7 @@ Training &amp; nutrition tracker for your home gym. Build-free PWA — plain HTM
 - **History** of every logged session.
 - **Nutrition diary** (free via Open Food Facts): meals (breakfast/lunch/dinner/snacks), calories + macros + micronutrients, daily targets with "remaining", week view, saved meals, recurring meals, copy-day, barcode scanning.
 - **Calorie-needs calculator** (Mifflin-St Jeor) from body stats + goal.
+- **Weight tracking** with a trend chart and history.
 - Cross-device sync via Supabase. Login with **username** (registration with email once).
 
 Exercise data & images: [yuhonas/free-exercise-db](https://github.com/yuhonas/free-exercise-db) (public domain), images served via jsDelivr.

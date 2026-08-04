@@ -187,5 +187,6 @@ input.mini{padding:9px 10px;font-size:15px;text-align:center}
 .food-row .tags{color:var(--muted);font-size:12px;margin-top:1px}
 .micro-row{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;padding:6px 0 2px}
 .btn.icon.sm{width:34px;height:34px;font-size:17px}
+.wchart{display:block;width:100%;height:150px}
 details summary{list-style:none}
 details summary::-webkit-details-marker{display:none}

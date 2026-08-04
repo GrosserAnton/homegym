@@ -9,6 +9,7 @@ import * as Plans from "./views/plans.js";
 import * as Workout from "./views/workout.js";
 import * as History from "./views/history.js";
 import * as Nutrition from "./views/nutrition.js";
+import * as Weight from "./views/weight.js";
 import * as Profile from "./views/profile.js";
 
 const appEl = document.getElementById("app");
@@ -32,7 +33,7 @@ function go(path) { location.hash = "#/" + path; }
 const ROUTES = {
   "": ["home", Home], home: ["home", Home], library: ["library", Library],
   plans: ["plans", Plans], workout: ["plans", Workout], food: ["food", Nutrition],
-  history: ["history", History], profile: ["profile", Profile],
+  history: ["history", History], profile: ["profile", Profile], weight: ["home", Weight],
 };
 
 function navHtml(active) {
