@@ -2,9 +2,59 @@ import { state, loadPlans, savePlan, deletePlan, getExercise, saveProfile } from
 import { allowedDbEquipment, imageUrl } from "../data.js";
 import { generatePlan } from "../generator.js";
 import { openPicker } from "../exui.js";
-import { esc, toast, exerciseFigure } from "../ui.js";
+import { esc, toast, exerciseFigure, openModal, closeModal } from "../ui.js";
 
 const WD = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]; // 0 = Monday
+export const EX_TYPES = [
+  { id: "normal", label: "Normal" },
+  { id: "superset", label: "Superset" },
+  { id: "dropset", label: "Drop set" },
+  { id: "emom", label: "EMOM" },
+  { id: "amrap", label: "AMRAP" },
+];
+const typeLabel = (t) => (EX_TYPES.find((x) => x.id === t) || EX_TYPES[0]).label;
+
+// Short description of an exercise's scheme for the day-editor row.
+export function exSummary(ex) {
+  const t = ex.type || "normal";
+  if (t === "emom") return `EMOM · ${ex.rounds || 10} min · ${esc(ex.reps || "?")} reps`;
+  if (t === "amrap") return `AMRAP · ${ex.minutes || 10} min`;
+  if (t === "dropset") return `${ex.sets} × ${esc(ex.reps)} · ${ex.drops || 3} drops`;
+  return `${ex.sets} × ${esc(ex.reps)}`;
+}
+
+// Config modal: pick a type and its parameters for one exercise.
+function openExerciseConfig(ex, onSave) {
+  ex.type = ex.type || "normal";
+  const wrap = openModal(`<div class="grabber"></div>
+    <h2 style="margin:0 0 10px">${esc(ex.exerciseName)}</h2>
+    <div class="chips" id="tchips">${EX_TYPES.map((t) => `<div class="chip ${ex.type === t.id ? "on" : ""}" data-t="${t.id}">${t.label}</div>`).join("")}</div>
+    <div id="tcfg"></div>
+    <button class="btn primary" id="savecfg" style="margin-top:8px">Done</button>
+    <button class="btn ghost" data-close style="margin-top:10px">Cancel</button>`);
+  const box = wrap.querySelector(".modal");
+  const bindCfg = () => box.querySelectorAll("[data-cfg]").forEach((inp) => { inp.oninput = () => { ex[inp.dataset.cfg] = inp.value; }; });
+  const drawCfg = () => { box.querySelector("#tcfg").innerHTML = cfgFields(ex); bindCfg(); };
+  box.querySelector("#tchips").onclick = (e) => {
+    const c = e.target.closest("[data-t]"); if (!c) return;
+    ex.type = c.dataset.t;
+    box.querySelectorAll("#tchips .chip").forEach((x) => x.classList.toggle("on", x.dataset.t === ex.type));
+    drawCfg();
+  };
+  drawCfg();
+  box.querySelector("#savecfg").onclick = () => { closeModal(); onSave(); };
+}
+function cfgFields(ex) {
+  const f = (id, lab, val, mode = "numeric") => `<label class="field grow"><span class="lab">${lab}</span><input data-cfg="${id}" inputmode="${mode}" value="${esc(val ?? "")}" /></label>`;
+  const row = (...items) => `<div class="row" style="gap:10px">${items.join("")}</div>`;
+  switch (ex.type) {
+    case "emom": return row(f("rounds", "Rounds (min)", ex.rounds ?? 10), f("reps", "Reps / round", ex.reps ?? "8", "text"));
+    case "amrap": return row(f("minutes", "Time (min)", ex.minutes ?? 10), f("reps", "Reps target", ex.reps ?? "", "text"));
+    case "dropset": return row(f("sets", "Sets", ex.sets ?? 3), f("reps", "Reps", ex.reps ?? "8-12", "text"), f("drops", "Drops", ex.drops ?? 3));
+    case "superset": return `<div class="muted small" style="margin:0 2px 10px">Paired with the next exercise — done back-to-back.</div>` + row(f("sets", "Sets", ex.sets ?? 3), f("reps", "Reps", ex.reps ?? "8-12", "text"));
+    default: return row(f("sets", "Sets", ex.sets ?? 3), f("reps", "Reps", ex.reps ?? "8-12", "text"));
+  }
+}
 
 export async function render(el, ctx) {
   const { query } = ctx;
@@ -176,16 +226,21 @@ async function renderBuilder(el, ctx, idParam, initialDay) {
         drawDay();
       });
     };
-    el.querySelectorAll("[data-delex]").forEach((b) => { b.onclick = () => { d.exercises.splice(+b.dataset.delex, 1); drawDay(); }; });
+    el.querySelectorAll("[data-editex]").forEach((row) => {
+      row.onclick = (e) => { if (e.target.closest("[data-delex]")) return; openExerciseConfig(d.exercises[+row.dataset.editex], drawDay); };
+    });
+    el.querySelectorAll("[data-delex]").forEach((b) => { b.onclick = (e) => { e.stopPropagation(); d.exercises.splice(+b.dataset.delex, 1); drawDay(); }; });
     const sw = el.querySelector("#startw");
     if (sw) sw.onclick = () => startWorkout(plan, activeDay, ctx);
   }
 
   function exRow(ex, xi) {
     const full = getExercise(ex.exerciseId);
-    return `<div class="ex-item" style="cursor:default">
+    const t = ex.type || "normal";
+    const badge = t !== "normal" ? `<span class="badge accent">${typeLabel(t)}</span>` : "";
+    return `<div class="ex-item" data-editex="${xi}" style="cursor:pointer">
       ${exerciseFigure(full, imageUrl, "thumb")}
-      <div class="meta grow"><div class="name">${esc(ex.exerciseName)}</div><div class="tags">${ex.sets} × ${esc(ex.reps)}</div></div>
+      <div class="meta grow"><div class="name">${esc(ex.exerciseName)}</div><div class="tags">${badge}${exSummary(ex)}</div></div>
       <button class="btn icon danger" data-delex="${xi}">✕</button>
     </div>`;
   }
@@ -202,8 +257,12 @@ export function startWorkout(plan, dayIndex, ctx) {
     entries: day.exercises.map((ex) => ({
       exerciseId: ex.exerciseId,
       exerciseName: ex.exerciseName,
-      targetSets: ex.sets,
-      targetReps: ex.reps,
+      type: ex.type || "normal",
+      targetSets: Number(ex.sets) || 3,
+      targetReps: ex.reps || "",
+      drops: Number(ex.drops) || 3,
+      rounds: Number(ex.rounds) || 10,
+      minutes: Number(ex.minutes) || 10,
       sets: [],
     })),
   };

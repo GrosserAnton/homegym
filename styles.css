@@ -184,6 +184,18 @@ input.mini::placeholder{color:var(--muted-2)}
 .set-line .idx{color:var(--muted);font-weight:700;text-align:center}
 .set-line .done{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;height:44px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted-2)}
 .set-line .done.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.ok{color:var(--ok)}
+.badge.accent{color:var(--accent-text);border-color:var(--accent)}
+.dropset,.ss-round{padding:8px 0;border-top:1px solid var(--border)}
+.dropset:first-of-type,.ss-round:first-of-type{border-top:0}
+/* EMOM / AMRAP live timer */
+.modal.modal-timer{text-align:center}
+.modal-timer .btn{font-size:18px;padding:15px}
+.timer{display:flex;flex-direction:column;align-items:center;padding:8px 0 6px}
+.timer-type{color:var(--gold);font-family:var(--font-display);letter-spacing:2.5px;font-size:14px;text-transform:uppercase}
+.timer-round{font-size:16px;font-weight:700;margin-top:6px}
+.timer-big{font-family:var(--font-display);font-size:82px;font-weight:700;line-height:1;margin:4px 0}
+.timer-count{font-family:var(--font-display);font-size:58px;font-weight:700;color:var(--accent-text);margin-top:10px;line-height:1}
 .divider{height:1px;background:var(--border);margin:18px 0}
 .pill{display:inline-block;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:4px 11px;font-size:12px;color:var(--muted);font-weight:600}
 .pill.gold{background:rgba(232,194,104,.14);border-color:rgba(232,194,104,.45);color:var(--gold)}
