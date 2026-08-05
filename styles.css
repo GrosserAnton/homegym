@@ -196,6 +196,14 @@ input.mini::placeholder{color:var(--muted-2)}
 .timer-round{font-size:16px;font-weight:700;margin-top:6px}
 .timer-big{font-family:var(--font-display);font-size:82px;font-weight:700;line-height:1;margin:4px 0}
 .timer-count{font-family:var(--font-display);font-size:58px;font-weight:700;color:var(--accent-text);margin-top:10px;line-height:1}
+/* Rest timer bar (above the tab bar) */
+.restbar{position:fixed;left:0;right:0;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px));z-index:40;max-width:var(--max);margin:0 auto;background:var(--surface-2);border:1px solid var(--border);border-bottom:0;border-radius:14px 14px 0 0;box-shadow:var(--shadow);display:none;align-items:center;gap:10px;padding:10px 14px}
+.restbar.show{display:flex}
+.restbar .restmid{flex:1;text-align:center}
+.restbar .restlbl{color:var(--gold);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase}
+.restbar .resttime{font-family:var(--font-display);font-size:24px;font-weight:700;line-height:1}
+.restbar .restadj{background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:9px 12px;font-weight:700;cursor:pointer}
+.restbar .restskip{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:9px 12px;font-weight:600;cursor:pointer}
 .divider{height:1px;background:var(--border);margin:18px 0}
 .pill{display:inline-block;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:4px 11px;font-size:12px;color:var(--muted);font-weight:600}
 .pill.gold{background:rgba(232,194,104,.14);border-color:rgba(232,194,104,.45);color:var(--gold)}

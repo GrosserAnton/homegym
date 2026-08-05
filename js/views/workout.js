@@ -13,6 +13,7 @@ export async function render(el, ctx) {
     el.querySelector("#toplans").onclick = () => ctx.go("plans");
     return;
   }
+  endRest(); // clear any leftover rest bar when (re)entering the workout
 
   el.innerHTML = `<div class="topbar"><div><h1>${esc(w.dayName || "Workout")}</h1><div class="sub">${esc(w.planName || "")}</div></div></div><div id="body"><div class="spinner"></div></div>`;
 
@@ -194,7 +195,7 @@ export async function render(el, ctx) {
     el.querySelector("#cancel").onclick = () => { if (confirm("Discard this workout?")) { state.currentWorkout = null; ctx.go("plans"); } };
     el.querySelectorAll("[data-set]").forEach((inp) => inp.oninput = () => { const [ei, si, f] = inp.dataset.set.split("_"); w.entries[+ei].sets[+si][f] = inp.value; });
     el.querySelectorAll("[data-drop]").forEach((inp) => inp.oninput = () => { const [ei, si, di, f] = inp.dataset.drop.split("_"); w.entries[+ei].sets[+si].drops[+di][f] = inp.value; });
-    el.querySelectorAll("[data-done]").forEach((b) => b.onclick = () => { const [ei, si] = b.dataset.done.split("_").map(Number); const s = w.entries[ei].sets[si]; s.done = !s.done; b.classList.toggle("on", s.done); });
+    el.querySelectorAll("[data-done]").forEach((b) => b.onclick = () => { const [ei, si] = b.dataset.done.split("_").map(Number); const s = w.entries[ei].sets[si]; s.done = !s.done; b.classList.toggle("on", s.done); if (s.done) startRest(); });
     el.querySelectorAll("[data-addset]").forEach((b) => b.onclick = () => { w.entries[+b.dataset.addset].sets.push({ weight: "", reps: "", done: false }); drawBody(); });
     el.querySelectorAll("[data-emomw]").forEach((inp) => inp.oninput = () => { w.entries[+inp.dataset.emomw].weight = inp.value; });
     el.querySelectorAll("[data-amrapw]").forEach((inp) => inp.oninput = () => { w.entries[+inp.dataset.amrapw].weight = inp.value; });
@@ -246,4 +247,48 @@ function buildBlocks(entries) {
     } else { blocks.push({ kind: t, idxs: [i] }); i++; }
   }
   return blocks;
+}
+
+// ---------- rest timer between sets (auto-starts when a set is checked ✓) ----------
+const REST_KEY = "maxbody_rest";
+const clampRest = (s) => Math.max(10, Math.min(600, Math.round(s) || 60));
+let restDur = clampRest(+localStorage.getItem(REST_KEY) || 60);
+let restEnd = 0, restInt = null, restLock = null, restWired = false;
+
+function restBarEl() {
+  let b = document.getElementById("restbar");
+  if (!b) { b = document.createElement("div"); b.id = "restbar"; b.className = "restbar"; document.body.appendChild(b); }
+  return b;
+}
+export function endRest() {
+  if (restInt) { clearInterval(restInt); restInt = null; }
+  releaseAwake(restLock); restLock = null;
+  const b = document.getElementById("restbar"); if (b) b.className = "restbar";
+}
+function startRest() {
+  unlockAudio(); keepAwake().then((l) => (restLock = l));
+  restEnd = Date.now() + restDur * 1000;
+  if (!restInt) restInt = setInterval(restTick, 250);
+  if (!restWired) { restWired = true; window.addEventListener("hashchange", () => { if (!location.hash.includes("workout")) endRest(); }); }
+  restTick();
+}
+function restTick() {
+  const remaining = Math.max(0, Math.round((restEnd - Date.now()) / 1000));
+  const b = restBarEl();
+  b.className = "restbar show";
+  b.innerHTML = `<button class="restadj" data-radj="-15">−15</button>
+    <div class="restmid"><div class="restlbl">Rest</div><div class="resttime">${mmss(remaining)}</div></div>
+    <button class="restadj" data-radj="15">+15</button>
+    <button class="restskip" data-radj="skip">Skip</button>`;
+  b.querySelectorAll("[data-radj]").forEach((btn) => btn.onclick = () => {
+    const v = btn.dataset.radj;
+    if (v === "skip") { endRest(); return; }
+    const d = Number(v);
+    restDur = clampRest(restDur + d);
+    try { localStorage.setItem(REST_KEY, restDur); } catch (e) {}
+    restEnd += d * 1000;
+    if (restEnd < Date.now()) restEnd = Date.now();
+    restTick();
+  });
+  if (remaining <= 0) { beep(1046, 0.4); vibrate([250, 120, 250]); endRest(); }
 }
