@@ -39,12 +39,11 @@ export async function render(el, ctx) {
     </div>
     <label class="field"><span class="lab">Steps per day</span><input id="steps_goal" inputmode="numeric" value="${p.steps_goal ?? ""}" placeholder="8000" /></label>
 
-    <h2 class="section">My equipment</h2>
-    <div class="small muted" style="margin:0 2px 10px">Bodyweight is always available.</div>
-    <div class="toggle-grid" id="equip">
-      <div class="toggle locked on"><span class="dot"></span>Bodyweight</div>
-      ${EQUIPMENT_OPTIONS.map((o) => `<div class="toggle ${equip.has(o.id) ? "on" : ""}" data-eq="${o.id}"><span class="dot"></span>${esc(o.label)}</div>`).join("")}
-    </div>
+    <h2 class="section">Equipment</h2>
+    <button class="card tap" id="equiprow" style="width:100%;text-align:left;color:inherit"><div class="row between">
+      <div class="grow"><div style="font-weight:700">My equipment</div>
+        <div class="muted small">${equipSummary(equip)}</div></div>
+      <span class="pill">Edit →</span></div></button>
     <button class="btn primary" id="save" style="margin-top:8px">Save profile</button>
     <div class="divider"></div>
     <button class="btn danger" id="logout">Log out</button>`;
@@ -63,13 +62,9 @@ export async function render(el, ctx) {
     el.querySelector("#calcout").textContent = `Maintenance ≈ ${t.tdee} kcal → target ${t.kcal_goal} kcal · ${t.protein_goal}P / ${t.carb_goal}C / ${t.fat_goal}F. Adjust if you like, then Save.`;
   });
 
-  el.querySelector("#equip").addEventListener("click", (e) => {
-    const t = e.target.closest("[data-eq]");
-    if (t) t.classList.toggle("on");
-  });
+  el.querySelector("#equiprow").addEventListener("click", () => ctx.go("equipment"));
 
   el.querySelector("#save").addEventListener("click", async () => {
-    const equipment = [...el.querySelectorAll("#equip .toggle.on[data-eq]")].map((t) => t.dataset.eq);
     const intOrNull = (id) => { const n = parseInt(val(id), 10); return Number.isFinite(n) && n > 0 ? n : null; };
     const numOrNull = (id) => { const n = parseFloat(val(id)); return Number.isFinite(n) && n > 0 ? n : null; };
     try {
@@ -77,7 +72,6 @@ export async function render(el, ctx) {
         username: val("username").trim(),
         days_per_week: +val("days"),
         goal: "muscle",
-        equipment,
         weight_kg: numOrNull("weight_kg"), height_cm: numOrNull("height_cm"), age: intOrNull("age"),
         sex: val("sex"), activity: val("activity"), weight_goal: val("weight_goal"),
         kcal_goal: intOrNull("kcal_goal"), protein_goal: intOrNull("protein_goal"),
@@ -94,4 +88,9 @@ export async function render(el, ctx) {
     await signOut();
     location.hash = "";
   });
+}
+
+function equipSummary(equip) {
+  const labels = EQUIPMENT_OPTIONS.filter((o) => equip.has(o.id)).map((o) => o.label);
+  return "Bodyweight" + (labels.length ? " · " + labels.join(", ") : " only");
 }

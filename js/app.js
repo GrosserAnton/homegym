@@ -11,6 +11,7 @@ import * as History from "./views/history.js";
 import * as Nutrition from "./views/nutrition.js";
 import * as Weight from "./views/weight.js";
 import * as Profile from "./views/profile.js";
+import * as Equipment from "./views/equipment.js";
 
 const appEl = document.getElementById("app");
 
@@ -34,6 +35,7 @@ const ROUTES = {
   "": ["home", Home], home: ["home", Home], library: ["library", Library],
   plans: ["plans", Plans], workout: ["plans", Workout], food: ["food", Nutrition],
   history: ["history", History], profile: ["profile", Profile], weight: ["home", Weight],
+  equipment: ["profile", Equipment],
 };
 
 function navHtml(active) {
@@ -85,7 +87,7 @@ async function main() {
   if ("serviceWorker" in navigator) {
     // Versioned URL so a CDN that stubbornly caches /sw.js can't pin an old
     // worker — bump ?v= together with the CACHE name in sw.js on each release.
-    navigator.serviceWorker.register("./sw.js?v=21").catch(() => {});
+    navigator.serviceWorker.register("./sw.js?v=22").catch(() => {});
   }
 }
 

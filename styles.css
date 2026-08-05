@@ -84,6 +84,7 @@ input,select{
 }
 input:focus,select:focus{border-color:var(--accent)}
 input.mini{padding:9px 10px;font-size:15px;text-align:center}
+input.mini::placeholder{color:var(--muted-2)}
 
 /* Chips */
 .chips{display:flex;gap:8px;overflow-x:auto;padding:4px 0 8px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
@@ -104,6 +105,23 @@ input.mini{padding:9px 10px;font-size:15px;text-align:center}
 .toggle.on{border-color:var(--accent)}
 .toggle.on .dot{background:var(--accent);border-color:var(--accent)}
 .toggle.locked{opacity:.55}
+
+/* Equipment screen */
+.gymcard{display:flex;gap:14px;align-items:center;width:100%;text-align:left;background:linear-gradient(135deg,#151b30,#0c0f1c);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px;cursor:pointer;color:var(--text)}
+.gymcard:active{transform:scale(.99)}
+.gymart{width:92px;flex:0 0 auto;color:var(--gold)}
+.gymart svg{width:100%;height:auto;display:block}
+.gymtitle{font-family:var(--font-display);font-size:22px;font-weight:600}
+.equipgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.equipcard{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 10px;cursor:pointer;color:var(--muted);transition:border-color .15s,color .15s}
+.equipcard .equipicon{width:52px;height:52px;color:var(--muted-2);transition:color .15s}
+.equipcard .equipicon svg{width:100%;height:100%;display:block}
+.equipcard .equipname{font-weight:600;font-size:14px}
+.equipcard.on{border-color:var(--accent);color:var(--text)}
+.equipcard.on .equipicon{color:var(--accent)}
+.equipcard.locked{cursor:default}
+.equipcard.on.locked{border-color:var(--gold)}
+.equipcard.on.locked .equipicon{color:var(--gold)}
 
 /* Exercise figure (start/end animation) */
 .exfig{position:relative;width:100%;aspect-ratio:4/3;background:#fff;border-radius:12px;overflow:hidden;flex:0 0 auto}

@@ -22,11 +22,9 @@ export async function render(el, ctx) {
       const target = en.targetSets || 3;
       const prev = await lastLog(en.exerciseId);
       en.prev = prev;
-      en.sets = Array.from({ length: target }, (_, i) => ({
-        weight: prev && prev[i] ? prev[i].weight : "",
-        reps: prev && prev[i] ? prev[i].reps : "",
-        done: false,
-      }));
+      // Start empty — last time's values show as a greyed placeholder. Tapping ✓
+      // without typing logs the set with the previous value; typing overwrites it.
+      en.sets = Array.from({ length: target }, () => ({ weight: "", reps: "", done: false }));
     })
   );
 
@@ -82,8 +80,24 @@ export async function render(el, ctx) {
   }
 
   async function finish() {
+    // Resolve each set: typed value wins; an empty but ✓-checked set falls back
+    // to last time's value; untouched, unchecked sets are dropped.
+    const entries = w.entries.map((en) => ({
+      exerciseId: en.exerciseId,
+      exerciseName: en.exerciseName,
+      sets: en.sets.map((s, si) => {
+        const typedW = s.weight !== "" && s.weight != null;
+        const typedR = s.reps !== "" && s.reps != null;
+        if (!s.done && !typedW && !typedR) return null;
+        const prev = en.prev && en.prev[si];
+        return {
+          weight: typedW ? s.weight : prev ? prev.weight : "",
+          reps: typedR ? s.reps : prev ? prev.reps : "",
+        };
+      }).filter(Boolean),
+    }));
     try {
-      const res = await saveWorkout({ planId: w.planId, dayName: w.dayName, entries: w.entries });
+      const res = await saveWorkout({ planId: w.planId, dayName: w.dayName, entries });
       if (res.count === 0) { toast("Log at least one set first", "error"); return; }
       state.currentWorkout = null;
       toast("Workout saved 💪", "ok");
