@@ -251,6 +251,8 @@ details summary::-webkit-details-marker{display:none}
 /* Steps placeholder */
 .stepbars{display:flex;align-items:flex-end;gap:5px;height:58px;margin:14px 0 6px;opacity:.5}
 .stepbars i{flex:1;background:var(--muted-2);border-radius:3px 3px 0 0;min-height:6px}
+.stepnum{font-family:var(--font-display);font-size:30px;font-weight:700;margin-top:10px;line-height:1}
+.stepnum small{font-size:13px;color:var(--muted);font-weight:600}
 
 /* Calorie ring */
 .ring-wrap{position:relative;width:112px;height:112px;margin:8px auto 0}

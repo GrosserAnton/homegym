@@ -1,7 +1,14 @@
-import { state, loadPlans, loadWeights, loadHistory, loadNutrition, getExercise } from "../store.js";
+import { state, loadPlans, loadWeights, loadHistory, loadNutrition, loadSteps, saveSteps, getExercise } from "../store.js";
 import { startWorkout } from "./plans.js";
 import { muscleFigures } from "../body.js";
-import { esc } from "../ui.js";
+import { esc, toast, openModal, closeModal } from "../ui.js";
+
+// Rough step rates (steps per minute) for the no-watch estimate.
+const STEP_ACTIVITIES = [
+  { label: "Walking / commute", spm: 110 },
+  { label: "Shopping / errands", spm: 65 },
+  { label: "Stroll", spm: 95 },
+];
 
 const ds = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const fmt = (n) => Math.round(n * 10) / 10;
@@ -13,11 +20,12 @@ const todayWd = () => (new Date().getDay() + 6) % 7; // Monday = 0
 export async function render(el, ctx) {
   const profile = state.profile || {};
   const today = new Date();
-  const [plans, weights, sessions, food] = await Promise.all([
+  const [plans, weights, sessions, food, steps] = await Promise.all([
     loadPlans(),
     loadWeights(),
     loadHistory(),
     loadNutrition(ds(today)).catch(() => []),
+    loadSteps(ds(today)).catch(() => 0),
   ]);
 
   const plan = plans.find((p) => p.id === profile.active_plan_id) || plans[0] || null;
@@ -51,7 +59,7 @@ export async function render(el, ctx) {
 
     <h2 class="section">Habits</h2>
     <div class="habitgrid">
-      ${stepsCard(profile.steps_goal || 0)}
+      ${stepsCard(steps, profile.steps_goal || 0)}
       ${caloriesCard(kcal, kcalGoal)}
       ${weightCard(weightDays, weightWeek, curW)}
       ${trainingsCard(workoutDays, trainWeek, trainTarget)}
@@ -66,6 +74,9 @@ export async function render(el, ctx) {
   el.querySelectorAll("[data-go]").forEach((c) =>
     c.addEventListener("click", () => ctx.go(c.dataset.go))
   );
+
+  const sc = el.querySelector("#stepscard");
+  if (sc) sc.addEventListener("click", () => openStepsDialog(ds(today), steps, profile.steps_goal || 0, () => ctx.refresh()));
 
   if (plan) {
     el.querySelectorAll("[data-start]").forEach((b) =>
@@ -185,15 +196,44 @@ function wireCarousel(el) {
 
 /* ---------------- habit cards ---------------- */
 
-function stepsCard(goal) {
-  const bars = [40, 62, 100, 78, 90, 55, 70];
-  return `<div class="hcard steps">
-    <div><div class="htitle">Steps</div><div class="hsub">Today</div></div>
-    <div class="stepbars">${bars.map((h) => `<i style="height:${h}%"></i>`).join("")}</div>
-    <div class="hfoot center">${
-      goal ? `<b>0</b> <span class="muted">/ ${goal.toLocaleString()}</span>` : `<span class="muted">Not tracked yet</span>`
-    }</div>
+function stepsCard(steps, goal) {
+  const pct = goal > 0 ? Math.min(100, Math.round((steps / goal) * 100)) : 0;
+  return `<div class="hcard tap steps" id="stepscard">
+    <div class="row between"><div><div class="htitle">Steps</div><div class="hsub">Today</div></div><span class="harrow">›</span></div>
+    <div class="stepnum">${steps.toLocaleString()}${goal ? `<small> / ${goal.toLocaleString()}</small>` : ""}</div>
+    <div class="hbar" style="margin-top:auto"><span style="width:${pct}%"></span></div>
+    <div class="hfoot"><b>${goal ? pct + "%" : steps.toLocaleString()}</b> <span class="muted">${goal ? "of goal" : "steps"}</span></div>
   </div>`;
+}
+
+function openStepsDialog(dateStr, current, goal, onDone) {
+  const wrap = openModal(`<div class="grabber"></div>
+    <h2 style="margin:0 0 4px">Steps</h2>
+    <div class="muted small" style="margin-bottom:12px">Today${goal ? ` · goal ${goal.toLocaleString()}` : ""}</div>
+    <label class="field"><span class="lab">Exact steps (from your watch)</span>
+      <input id="exact" inputmode="numeric" value="${current || ""}" placeholder="e.g. 8000" /></label>
+    <div class="lab" style="margin:2px 2px 8px">No watch? Estimate from minutes:</div>
+    ${STEP_ACTIVITIES.map((a) => `<label class="field"><span class="lab">${a.label} <span class="muted">(min)</span></span>
+      <input class="actmin" data-spm="${a.spm}" inputmode="numeric" placeholder="0" /></label>`).join("")}
+    <div class="card" id="steptotal"></div>
+    <button class="btn primary" id="savesteps" style="margin-top:8px">Save</button>
+    <button class="btn ghost" data-close style="margin-top:10px">Cancel</button>`);
+  const box = wrap.querySelector(".modal");
+  const exact = box.querySelector("#exact");
+  const mins = [...box.querySelectorAll(".actmin")];
+  const calc = () => {
+    const est = mins.reduce((s, m) => s + (Number(m.value) || 0) * Number(m.dataset.spm), 0);
+    const total = Math.round((Number(exact.value) || 0) + est);
+    box.querySelector("#steptotal").innerHTML = `<div class="row between small"><span class="muted">Estimated from activity</span><b>${Math.round(est).toLocaleString()}</b></div>
+      <div class="row between" style="margin-top:6px"><span>Total steps</span><b style="font-size:20px;font-family:var(--font-display)">${total.toLocaleString()}</b></div>`;
+    return total;
+  };
+  [exact, ...mins].forEach((el) => el.addEventListener("input", calc));
+  calc();
+  box.querySelector("#savesteps").onclick = async () => {
+    try { await saveSteps(dateStr, calc()); closeModal(); toast("Steps saved 👟", "ok"); onDone(); }
+    catch (e) { toast(e.message || "Could not save", "error"); }
+  };
 }
 
 function caloriesCard(kcal, goal) {

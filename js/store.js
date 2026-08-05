@@ -312,3 +312,15 @@ export async function deleteWeight(id) {
   const { error } = await supa.from("gym_weight_logs").delete().eq("id", id);
   if (error) throw error;
 }
+
+// ---------- steps ----------
+export async function loadSteps(logDate) {
+  const { data, error } = await supa.from("gym_steps").select("steps").eq("log_date", logDate).maybeSingle();
+  if (error) throw error;
+  return data?.steps || 0;
+}
+export async function saveSteps(logDate, steps) {
+  const { error } = await supa.from("gym_steps")
+    .upsert({ user_id: state.user.id, log_date: logDate, steps: Math.max(0, Math.round(steps)), updated_at: new Date().toISOString() }, { onConflict: "user_id,log_date" });
+  if (error) throw error;
+}
