@@ -23,12 +23,12 @@ export function toast(msg, type = "info") {
   toastTimer = setTimeout(() => (el.className = ""), 2600);
 }
 
-export function openModal(html) {
+export function openModal(html, opts = {}) {
   closeModal();
   const wrap = document.createElement("div");
   wrap.id = "modal";
   wrap.className = "modal-backdrop";
-  wrap.innerHTML = `<div class="modal" role="dialog" aria-modal="true">${html}</div>`;
+  wrap.innerHTML = `<div class="modal ${opts.className || ""}" role="dialog" aria-modal="true">${html}</div>`;
   wrap.addEventListener("click", (e) => {
     if (e.target === wrap || e.target.closest("[data-close]")) closeModal();
   });
@@ -45,7 +45,9 @@ function attachSwipeToClose(sheet) {
   let startY = 0, dy = 0, t0 = 0, dragging = false;
   const start = (e) => {
     if (sheet.scrollTop > 0) return; // let inner content scroll first
-    if (e.target.closest("input, select, textarea, button, a, [contenteditable]")) return;
+    // Don't hijack drags on inputs/controls or inside an internal scroll area
+    // (e.g. the food list) — only the header/grabber should dismiss.
+    if (e.target.closest("input, select, textarea, button, a, [contenteditable], .modal-scroll")) return;
     dragging = true; dy = 0; t0 = Date.now();
     startY = e.touches[0].clientY;
     sheet.style.transition = "none";

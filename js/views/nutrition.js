@@ -217,16 +217,18 @@ function wireBody(body, entries, draw) {
 async function openAdd(meal, onDone) {
   let tab = "search";
   const wrap = openModal(`<div class="grabber"></div>
-    <div class="row between"><h2 style="margin:0 0 8px">Add to ${esc(mealLabel(meal))}</h2><button class="btn sm ghost" data-close>Cancel</button></div>
-    <div class="chips" id="atabs">
-      <div class="chip on" data-t="search">Search</div><div class="chip" data-t="recent">Recent</div><div class="chip" data-t="saved">Saved meals</div>
+    <div class="modal-head">
+      <div class="row between"><h2 style="margin:0 0 8px">Add to ${esc(mealLabel(meal))}</h2><button class="btn sm ghost" data-close>Cancel</button></div>
+      <div class="chips" id="atabs">
+        <div class="chip on" data-t="search">Search</div><div class="chip" data-t="recent">Recent</div><div class="chip" data-t="saved">Saved meals</div>
+      </div>
+      <div id="arow" class="row" style="gap:8px">
+        <input id="aq" placeholder="Search food…" autocomplete="off" style="flex:1" />
+        ${barcodeSupported() ? `<button class="btn icon" id="ascan" title="Scan barcode">▣</button>` : ""}
+      </div>
+      <div id="ahint" class="muted small" style="margin:8px 2px"></div>
     </div>
-    <div id="arow" class="row" style="gap:8px">
-      <input id="aq" placeholder="Search food…" autocomplete="off" style="flex:1" />
-      ${barcodeSupported() ? `<button class="btn icon" id="ascan" title="Scan barcode">▣</button>` : ""}
-    </div>
-    <div id="ahint" class="muted small" style="margin:8px 2px"></div>
-    <div id="alist"></div>`);
+    <div id="alist" class="modal-scroll"></div>`, { className: "modal-tall" });
   const box = wrap.querySelector(".modal");
   const list = box.querySelector("#alist"), hint = box.querySelector("#ahint"), arow = box.querySelector("#arow");
 
