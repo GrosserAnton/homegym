@@ -9,7 +9,7 @@ const WD = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]; // 0 = Monday
 export async function render(el, ctx) {
   const { query } = ctx;
   if (query.new === "auto") return renderAutoGenerate(el, ctx);
-  if (query.id || query.new === "empty") return renderBuilder(el, ctx, query.id);
+  if (query.id || query.new === "empty") return renderBuilder(el, ctx, query.id || null, query.day != null ? +query.day : null);
   return renderList(el, ctx);
 }
 
@@ -79,88 +79,115 @@ async function renderAutoGenerate(el, ctx) {
   });
 }
 
-async function renderBuilder(el, ctx, id) {
+async function renderBuilder(el, ctx, idParam, initialDay) {
   await loadPlans();
+  let id = idParam;
   let plan;
   if (id) {
     const src = state.plans.find((p) => p.id === id);
     if (!src) { el.innerHTML = `<div class="empty"><div class="big">🤔</div><div>Plan not found.</div></div>`; return; }
     plan = JSON.parse(JSON.stringify(src));
   } else {
-    plan = { name: "My Plan", source: "manual", days: [{ name: "Day 1", exercises: [] }] };
+    plan = { name: "My Plan", source: "manual", days: [] };
   }
 
-  function draw() {
+  // Two in-place screens (no route change) so the in-memory draft survives.
+  let screen = Number.isInteger(initialDay) && plan.days[initialDay] ? "day" : "overview";
+  let activeDay = Number.isInteger(initialDay) ? initialDay : 0;
+
+  async function save() {
+    try {
+      const saved = await savePlan(plan);
+      if (saved) { plan.id = saved.id; id = saved.id; }
+      toast("Saved", "ok");
+    } catch (err) { toast(err.message || "Could not save", "error"); }
+  }
+
+  const draw = () => (screen === "day" ? drawDay() : drawOverview());
+
+  // ---------- plan overview ----------
+  function drawOverview() {
     el.innerHTML = `
-      <div class="topbar"><div class="row" style="gap:10px"><button class="btn icon ghost" id="back">‹</button><h1 style="margin:0">Edit plan</h1></div></div>
+      <div class="topbar"><div class="row" style="gap:10px"><button class="btn icon ghost" id="back">‹</button><h1 style="margin:0">Edit plan</h1></div>
+        <button class="btn sm primary" id="save" style="width:auto">Save</button></div>
       <label class="field"><span class="lab">Plan name</span><input id="pname" value="${esc(plan.name)}" /></label>
-      <div id="days">${plan.days.map((d, di) => dayBlock(d, di)).join("")}</div>
+      <h2 class="section">Days</h2>
+      <div id="days">${
+        plan.days.length ? plan.days.map((d, di) => dayRow(d, di)).join("") : `<div class="muted small" style="margin:0 2px 12px">No days yet — add one below.</div>`
+      }</div>
       <button class="btn ghost" id="addday" style="margin-top:6px">+ Add day</button>
-      <div class="divider"></div>
-      <button class="btn primary" id="save">Save plan</button>
-      ${id ? `<button class="btn danger" id="del" style="margin-top:10px">Delete plan</button>` : ""}`;
-    bind();
+      ${id ? `<div class="divider"></div><button class="btn danger" id="del">Delete plan</button>` : ""}`;
+
+    el.querySelector("#back").onclick = () => ctx.go("plans");
+    el.querySelector("#save").onclick = save;
+    el.querySelector("#pname").oninput = (e) => { plan.name = e.target.value; };
+    el.querySelector("#addday").onclick = () => { plan.days.push({ name: "Day " + (plan.days.length + 1), exercises: [] }); drawOverview(); };
+    el.querySelector("#days").addEventListener("click", (e) => {
+      const del = e.target.closest("[data-delday]");
+      if (del) {
+        e.stopPropagation();
+        if (!confirm("Remove this day?")) return;
+        plan.days.splice(+del.dataset.delday, 1); drawOverview(); return;
+      }
+      const row = e.target.closest("[data-openday]");
+      if (row) { activeDay = +row.dataset.openday; screen = "day"; drawDay(); }
+    });
+    const del = el.querySelector("#del");
+    if (del) del.onclick = async () => { if (!confirm("Delete this plan?")) return; await deletePlan(id); toast("Deleted", "ok"); ctx.go("plans"); };
   }
 
-  function dayBlock(d, di) {
-    return `<div class="card" data-day="${di}">
-      <div class="row between" style="margin-bottom:10px;gap:8px">
-        <input class="dayname grow" data-di="${di}" value="${esc(d.name)}" style="font-weight:700" />
-        <select class="dayweekday" data-di="${di}" style="width:auto;padding:11px 8px;flex:0 0 auto">
-          <option value="">Any day</option>
-          ${WD.map((w, i) => `<option value="${i}" ${d.weekday === i ? "selected" : ""}>${w}</option>`).join("")}
-        </select>
-        <button class="btn icon danger" data-delday="${di}" title="Remove day">✕</button>
-      </div>
-      ${d.exercises.map((ex, xi) => exRow(ex, di, xi)).join("") || `<div class="muted small" style="margin:4px 2px 10px">No exercises yet.</div>`}
-      <div class="btn-row">
-        <button class="btn sm" data-addex="${di}">+ Add exercise</button>
-        ${d.exercises.length ? `<button class="btn sm primary" data-start="${di}">Start workout</button>` : ""}
-      </div>
-    </div>`;
+  function dayRow(d, di) {
+    const wd = Number.isInteger(d.weekday) ? WD[d.weekday] : "Any day";
+    const n = (d.exercises || []).length;
+    return `<div class="card tap" data-openday="${di}"><div class="row between">
+      <div class="grow"><div style="font-weight:700;font-size:16px">${esc(d.name)}</div>
+        <div class="muted small">${wd} · ${n} exercise${n !== 1 ? "s" : ""}</div></div>
+      <div class="row" style="gap:8px"><button class="btn icon danger sm" data-delday="${di}" title="Remove day">✕</button><span class="pill">Edit</span></div>
+    </div></div>`;
   }
 
-  function exRow(ex, di, xi) {
+  // ---------- single day editor ----------
+  function drawDay() {
+    const d = plan.days[activeDay];
+    el.innerHTML = `
+      <div class="topbar"><div class="row" style="gap:10px"><button class="btn icon ghost" id="backday">‹</button><h1 style="margin:0">Edit day</h1></div>
+        <button class="btn sm primary" id="save" style="width:auto">Save</button></div>
+      <label class="field"><span class="lab">Day name</span><input id="dname" value="${esc(d.name)}" /></label>
+      <label class="field"><span class="lab">Weekday</span>
+        <select id="dweekday"><option value="">Any day</option>${WD.map((w, i) => `<option value="${i}" ${d.weekday === i ? "selected" : ""}>${w}</option>`).join("")}</select></label>
+      <h2 class="section">Exercises</h2>
+      <div id="exs">${
+        d.exercises.map((ex, xi) => exRow(ex, xi)).join("") || `<div class="muted small" style="margin:0 2px 12px">No exercises yet.</div>`
+      }</div>
+      <div class="btn-row" style="margin-top:6px">
+        <button class="btn" id="addex">+ Add exercise</button>
+        ${d.exercises.length ? `<button class="btn primary" id="startw">Start workout</button>` : ""}
+      </div>`;
+
+    el.querySelector("#backday").onclick = () => { screen = "overview"; drawOverview(); };
+    el.querySelector("#save").onclick = save;
+    el.querySelector("#dname").oninput = (e) => { d.name = e.target.value; };
+    el.querySelector("#dweekday").onchange = (e) => { d.weekday = e.target.value === "" ? null : Number(e.target.value); };
+    el.querySelector("#addex").onclick = () => {
+      openPicker((exId) => {
+        const full = getExercise(exId); if (!full) return;
+        const compound = full.mechanic === "compound";
+        d.exercises.push({ exerciseId: exId, exerciseName: full.name, sets: compound ? 4 : 3, reps: compound ? "6-10" : "10-12" });
+        drawDay();
+      });
+    };
+    el.querySelectorAll("[data-delex]").forEach((b) => { b.onclick = () => { d.exercises.splice(+b.dataset.delex, 1); drawDay(); }; });
+    const sw = el.querySelector("#startw");
+    if (sw) sw.onclick = () => startWorkout(plan, activeDay, ctx);
+  }
+
+  function exRow(ex, xi) {
     const full = getExercise(ex.exerciseId);
     return `<div class="ex-item" style="cursor:default">
       ${exerciseFigure(full, imageUrl, "thumb")}
       <div class="meta grow"><div class="name">${esc(ex.exerciseName)}</div><div class="tags">${ex.sets} × ${esc(ex.reps)}</div></div>
-      <button class="btn icon danger" data-delex="${di}_${xi}">✕</button>
+      <button class="btn icon danger" data-delex="${xi}">✕</button>
     </div>`;
-  }
-
-  function bind() {
-    el.querySelector("#back").onclick = () => ctx.go("plans");
-    el.querySelector("#pname").oninput = (e) => { plan.name = e.target.value; };
-    el.querySelectorAll(".dayname").forEach((inp) => {
-      inp.oninput = () => { plan.days[+inp.dataset.di].name = inp.value; };
-    });
-    el.querySelectorAll(".dayweekday").forEach((sel) => {
-      sel.onchange = () => { plan.days[+sel.dataset.di].weekday = sel.value === "" ? null : Number(sel.value); };
-    });
-    el.querySelector("#addday").onclick = () => { plan.days.push({ name: "Day " + (plan.days.length + 1), exercises: [] }); draw(); };
-    el.querySelectorAll("[data-delday]").forEach((b) => { b.onclick = () => { plan.days.splice(+b.dataset.delday, 1); draw(); }; });
-    el.querySelectorAll("[data-addex]").forEach((b) => {
-      b.onclick = () => {
-        const di = +b.dataset.addex;
-        openPicker((exId) => {
-          const full = getExercise(exId); if (!full) return;
-          const compound = full.mechanic === "compound";
-          plan.days[di].exercises.push({ exerciseId: exId, exerciseName: full.name, sets: compound ? 4 : 3, reps: compound ? "6-10" : "10-12" });
-          draw();
-        });
-      };
-    });
-    el.querySelectorAll("[data-delex]").forEach((b) => {
-      b.onclick = () => { const [di, xi] = b.dataset.delex.split("_").map(Number); plan.days[di].exercises.splice(xi, 1); draw(); };
-    });
-    el.querySelectorAll("[data-start]").forEach((b) => { b.onclick = () => startWorkout(plan, +b.dataset.start, ctx); });
-    el.querySelector("#save").onclick = async () => {
-      try { await savePlan(plan); toast("Saved", "ok"); ctx.go("plans"); }
-      catch (err) { toast(err.message || "Could not save", "error"); }
-    };
-    const del = el.querySelector("#del");
-    if (del) del.onclick = async () => { if (!confirm("Delete this plan?")) return; await deletePlan(id); toast("Deleted", "ok"); ctx.go("plans"); };
   }
 
   draw();

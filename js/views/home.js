@@ -85,7 +85,12 @@ export async function render(el, ctx) {
         startWorkout(plan, +b.dataset.start, ctx);
       })
     );
-    wireCarousel(el);
+    // Tap the workout card (not START) → open that day in the plan.
+    const slide = el.querySelector(".wcarousel .wslide[data-day]");
+    if (slide) slide.addEventListener("click", (e) => {
+      if (e.target.closest("[data-start]")) return;
+      ctx.go(`plans?id=${plan.id}&day=${slide.dataset.day}`);
+    });
   }
 }
 
